@@ -1,0 +1,822 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <time.h>
+#include <ctype.h>
+
+
+// jinx
+#include "instagib.h"
+#include "ctfc.h"
+#include "spec.h"
+#include "d1.h"
+#include "jinx.h"
+#include "promod.h"
+#include "gravity.h"
+#include "corruption.h"
+
+#include "aistruct.h"
+#include "gamefont.h"
+// jinx
+
+#include "u_mem.h"
+#include "strutil.h"
+#include "game.h"
+#include "multi.h"
+#include "object.h"
+#include "laser.h"
+#include "fuelcen.h"
+#include "scores.h"
+#include "gauges.h"
+#include "collide.h"
+#include "error.h"
+#include "fireball.h"
+#include "newmenu.h"
+#include "console.h"
+#include "wall.h"
+#include "cntrlcen.h"
+#include "powerup.h"
+#include "polyobj.h"
+#include "bm.h"
+#include "endlevel.h"
+#include "key.h"
+#include "playsave.h"
+#include "timer.h"
+#include "digi.h"
+#include "sounds.h"
+#include "kconfig.h"
+#include "newdemo.h"
+#include "text.h"
+#include "kmatrix.h"
+#include "multibot.h"
+#include "gameseq.h"
+#include "physics.h"
+#include "config.h"
+#include "ai.h"
+#include "switch.h"
+#include "textures.h"
+#include "byteswap.h"
+#include "sounds.h"
+#include "args.h"
+#include "effects.h"
+#include "iff.h"
+#include "state.h"
+#include "automap.h"
+#ifdef USE_UDP
+#include "net_udp.h"
+#endif
+
+// ~~~~~~~~~~~ camera init start
+
+void init_master_cam()
+{
+	master_cam_objnum = 0;
+	object * pobj = &Objects[Players[Player_num].objnum];
+	for (int i = 0; i <= Highest_object_index; i++)
+	{
+		if (Objects[i].id == POW_FULL_MAP) 
+		{
+			master_cam_objnum = obj_create(OBJ_CAMERA, 0, Objects[i].segnum, &Objects[i].pos, &Objects[i].orient, 0, CT_NONE, MT_PHYSICS, RT_NONE);
+			master_cam_parent_objnum = obj_create(OBJ_CAMERA, 0, Objects[i].segnum, &Objects[i].pos, &Objects[i].orient, 0, CT_NONE, MT_PHYSICS, RT_NONE);
+			object * obj = &Objects[master_cam_objnum];
+			obj->segnum = Objects[i].segnum;
+			obj->pos = Objects[i].pos;
+			obj->orient = Objects[i].orient;
+			obj->mtype.phys_info.brakes = 0;
+			obj->mtype.phys_info.flags |= PF_USES_THRUST;
+			obj->mtype.phys_info.mass = pobj->mtype.phys_info.mass;
+			obj->mtype.phys_info.drag = pobj->mtype.phys_info.drag;
+			Objects[i].flags |= OF_SHOULD_BE_DEAD;
+			obj->default_pos = obj->pos;
+			master_cam_objnum_pos = obj->pos;
+			master_cam_objnum_seg = obj->segnum;
+			break;
+		}
+		if ((i == Highest_object_index) && (Objects[i].id != POW_FULL_MAP))
+			camera_init_error();
+	}
+}
+
+void new_master_cam()
+{
+	int old_master_cam_objnum = master_cam_objnum;
+	Objects[old_master_cam_objnum].flags |= OF_SHOULD_BE_DEAD;
+	master_cam_objnum = obj_create(OBJ_CAMERA, 0, Objects[master_cam_parent_objnum].segnum, &Objects[master_cam_parent_objnum].pos, &Objects[master_cam_parent_objnum].orient, 0, CT_NONE, MT_PHYSICS, RT_NONE);
+	
+	object * obj = &Objects[master_cam_objnum];
+	object * pobj = &Objects[Players[Player_num].objnum];
+	obj->mtype.phys_info.brakes = 0;
+	obj->mtype.phys_info.flags |= PF_USES_THRUST;
+	obj->mtype.phys_info.mass = pobj->mtype.phys_info.mass;
+	obj->mtype.phys_info.drag = pobj->mtype.phys_info.drag;
+	init_sub_camera();
+}
+
+void init_sub_camera()
+{
+	if (Players[Player_num].cam_objnum) Objects[Players[Player_num].cam_objnum].flags |= OF_SHOULD_BE_DEAD;
+	Players[Player_num].cam_objnum = obj_create(OBJ_CAMERA, 0, Objects[master_cam_objnum].segnum, &Objects[master_cam_objnum].pos, &Objects[master_cam_objnum].orient, 0, CT_NONE, MT_PHYSICS, RT_NONE);
+	object * cobj = &Objects[Players[Player_num].cam_objnum];
+	object * pobj = &Objects[Players[Player_num].objnum];
+	cobj->pos.z = Objects[master_cam_objnum].pos.z;
+	cobj->pos.y = Objects[master_cam_objnum].pos.y;
+	cobj->pos.x = Objects[master_cam_objnum].pos.x;
+	cobj->default_pos = cobj->pos;
+	cobj->default_pos = cobj->pos;
+	cobj->mtype.phys_info.brakes = 0;
+	cobj->mtype.phys_info.flags |= PF_USES_THRUST;
+	cobj->mtype.phys_info.mass = pobj->mtype.phys_info.mass;
+	cobj->mtype.phys_info.drag = pobj->mtype.phys_info.drag;
+}
+
+void init_camera_intermediary()
+{
+	camera_intermediary = obj_create(OBJ_CAMERA, 0, Objects[master_cam_objnum].segnum, &Objects[master_cam_objnum].pos, &Objects[master_cam_objnum].orient, 0, CT_NONE, MT_PHYSICS, RT_NONE);
+	object * cobj = &Objects[camera_intermediary];
+	object * pobj = &Objects[Players[Player_num].objnum];
+	cobj->pos.z = Objects[master_cam_objnum].pos.z;
+	cobj->pos.y = Objects[master_cam_objnum].pos.y;
+	cobj->pos.x = Objects[master_cam_objnum].pos.x;
+	cobj->default_pos = cobj->pos;
+	cobj->mtype.phys_info.brakes = 0;
+	cobj->mtype.phys_info.flags |= PF_USES_THRUST;
+	cobj->mtype.phys_info.mass = pobj->mtype.phys_info.mass;
+	cobj->mtype.phys_info.drag = pobj->mtype.phys_info.drag;
+}
+
+void init_pushbox_camera()
+{
+	pushbox_objnum = obj_create(OBJ_CAMERA, 0, Objects[master_cam_objnum].segnum, &Objects[master_cam_objnum].pos, &Objects[master_cam_objnum].orient, 0, CT_NONE, MT_PHYSICS, RT_NONE);
+	
+	Objects[pushbox_objnum].pos.z = Objects[master_cam_objnum].pos.z;
+	Objects[pushbox_objnum].pos.y = Objects[master_cam_objnum].pos.y;
+	Objects[pushbox_objnum].pos.x = Objects[master_cam_objnum].pos.x;
+}
+
+void camera_init_error()
+{
+	HUD_init_message(HM_DEFAULT, "Error: No camera object found.");
+	for (int i = 0; i <= Highest_object_index; i++)
+	{
+		if (Objects[i].type != OBJ_PLAYER)
+		{
+			object * obj = &Objects[i];
+			object * pobj = &Objects[Players[Player_num].objnum];
+			master_cam_objnum = obj_create(OBJ_CAMERA, 0, Objects[i].segnum, &Objects[i].pos, &Objects[i].orient, 0, CT_NONE, MT_PHYSICS, RT_NONE);
+			master_cam_parent_objnum = obj_create(OBJ_CAMERA, 0, Objects[i].segnum, &Objects[i].pos, &Objects[i].orient, 0, CT_NONE, MT_PHYSICS, RT_NONE);
+			obj = &Objects[master_cam_objnum];
+			obj->segnum = Objects[i].segnum;
+			obj->pos = Objects[i].pos;
+			obj->orient = Objects[i].orient;
+			obj->mtype.phys_info.brakes = 0;
+			obj->mtype.phys_info.flags |= PF_USES_THRUST;
+			obj->mtype.phys_info.mass = pobj->mtype.phys_info.mass;
+			obj->mtype.phys_info.drag = pobj->mtype.phys_info.drag;
+			break;
+		}
+	}
+	HUD_init_message(HM_DEFAULT, "Bailing and using first non-player object!");
+}
+
+// ~~~~~~~~~~~ camera init end
+
+// ~~~~~~~~~~~ camera main start
+
+void do_master_cam_frame_new()
+{
+	object * cobj = &Objects[master_cam_objnum];
+	object * iobj = &Objects[camera_intermediary];
+	
+	fix cs1, cs2, cs3;
+		
+	cs1 = CAMERA_SCROLL_RATE * FrameTime;
+	cs2 = cs1 * level_scroll_rate;
+	cs3 = cs2 * 20;
+	camera_speed = cs3;
+
+	iobj->mtype.phys_info.velocity.z = camera_speed;	
+	
+	
+	if (camera_state == CAM_MOVING)
+	{
+		fix	k = fixmuldiv(cobj->mtype.phys_info.mass,cobj->mtype.phys_info.drag,(f1_0-cobj->mtype.phys_info.drag));
+
+		vm_vec_copy_scale(&cobj->mtype.phys_info.thrust,&iobj->mtype.phys_info.velocity,k);
+		if (cobj->pos.z >= cobj->highest_pos.z)
+			cobj->highest_pos.z = cobj->pos.z;		// if farther than highest ever, update highest ever
+		
+		cobj->last_pos.z = cobj->pos.z;
+	}
+	
+	if (camera_wall_state) camera_wall_state--;
+}
+
+void sync_cams()
+{
+	Objects[pushbox_objnum].pos.z = Objects[master_cam_objnum].pos.z;
+	Objects[pushbox_objnum].pos.y = Objects[Players[Player_num].objnum].pos.y;
+	Objects[pushbox_objnum].pos.x = Objects[Players[Player_num].objnum].pos.x;
+	Objects[camera_intermediary].pos = Objects[camera_intermediary].default_pos;
+}
+
+void sync_subs_to_master()
+{
+	if (camera_state == CAM_MOVING)
+	{
+		
+		Objects[Players[Player_num].cam_objnum].mtype.phys_info.velocity.y = Objects[Players[Player_num].objnum].mtype.phys_info.velocity.y;		// lock y axis to player
+		Objects[Players[Player_num].cam_objnum].orient = Objects[master_cam_objnum].orient;	// lock orient to master cam
+		Objects[Players[Player_num].cam_objnum].mtype.phys_info.thrust.z = Objects[master_cam_objnum].mtype.phys_info.thrust.z;	// lock sub cam's z thrust to master cam's
+	}
+}
+
+void handle_subs()
+{
+	sync_subs_to_master();
+	handle_sub_controls();	
+}
+
+// ~~~~~~~~~~~ camera main end
+
+// ~~~~~~~~~~~ camera states start
+
+void stop_camera_movement(ubyte state)
+{
+	vm_vec_zero(&Objects[master_cam_objnum].mtype.phys_info.velocity);
+	vm_vec_zero(&Objects[master_cam_objnum].mtype.phys_info.thrust);
+	vm_vec_zero(&Objects[camera_intermediary].mtype.phys_info.velocity);
+	vm_vec_zero(&Objects[camera_intermediary].mtype.phys_info.thrust);
+	vm_vec_zero(&Objects[Players[Player_num].cam_objnum].mtype.phys_info.velocity);
+	vm_vec_zero(&Objects[Players[Player_num].cam_objnum].mtype.phys_info.thrust);
+	camera_state = state;
+	if (state == CAM_PAUSED)
+		master_cam_objnum_pos_paused = Objects[master_cam_objnum].pos;
+}
+
+void reset_camera_position()
+{
+	object *cobj = &Objects[master_cam_objnum];
+	if (last_camera_state == CAM_DEAD)
+		cobj->pos = Objects[master_cam_objnum].pos;
+	if (last_camera_state == CAM_PAUSED)
+		cobj->pos = master_cam_objnum_pos_paused;
+	camera_speed = camera_speed_checkpoint;
+}
+
+void change_camera_speed(int var)
+{
+	if (var > MAX_LEVEL_SCROLL_RATE || var < MAX_LEVEL_SCROLL_RATE * -1) 
+	{
+		HUD_init_message(HM_DEFAULT, "invalid scroll rate: %d", var);
+		return;
+	}
+	level_scroll_rate = var;
+		
+	HUD_init_message(HM_DEFAULT, "level scroll rate changed to: %d", level_scroll_rate);
+}
+
+void reset_camera_zoom()
+{
+	object * cobj = &Objects[master_cam_objnum];
+	cobj->pos.x = Objects[master_cam_parent_objnum].default_pos.x;
+	cobj->segnum = Objects[master_cam_parent_objnum].segnum;
+}
+
+void change_camera_state(ubyte state)
+{
+	switch (state)
+	{
+		case CAM_PAUSED:
+			stop_camera_movement(CAM_PAUSED);
+			break;
+		case CAM_DEAD:
+			stop_camera_movement(CAM_DEAD);
+			break;
+		case CAM_DEFAULT:
+			camera_state = level_camera_state_default;
+		case CAM_PLAYER:
+			camera_state = CAM_PLAYER;
+		case CAM_MOVING:
+			camera_state = CAM_MOVING;
+			break;
+	}
+	handle_last_state();
+	last_camera_state = camera_state;
+}
+
+void handle_last_state()
+{
+	switch (last_camera_state)
+	{
+		case CAM_DEAD:
+			new_master_cam();
+			reset_camera_position();
+			reset_all_variables();
+			break;
+	}
+}
+
+void do_camera_triggers()
+{
+	if (cam_trigger_num == num_cam_triggers) return;
+	object * obj = &Objects[master_cam_objnum];
+	if (obj->segnum == master_cam_objnum_seg) cam_trigger_num = 0;
+	if (previous_cam_segment != obj->segnum) 
+	{
+			int	connect_side;
+			connect_side = find_connect_side(&Segments[obj->segnum], &Segments[previous_cam_segment]);
+			if (connect_side != -1) 
+			{
+				int wall_num,trigger_num;
+				wall_num = Segments[previous_cam_segment].sides[connect_side].wall_num;
+				if ( wall_num != -1 ) 
+				{
+					trigger_num = Walls[wall_num].trigger;
+					if (trigger_num != -1)
+					{
+						change_camera_speed(cam_speed_trigger[cam_trigger_num]);
+						cam_trigger_num++;
+					}
+				}
+			}
+			previous_cam_segment = obj->segnum;
+	}
+}
+
+// ~~~~~~~~~~~ camera states end
+
+// ~~~~~~~~~~~ axis stuff start
+
+void handle_player_pushbox()
+{
+	fix a1 = vm_vec_dist_quick(&Objects[Players[Player_num].cam_objnum].pos, &Objects[pushbox_objnum].pos);
+	fix a2 = fixmul(a1,a1);
+	fix c1 = vm_vec_dist_quick(&Objects[Players[Player_num].cam_objnum].pos, &Objects[Players[Player_num].objnum].pos);
+	fix c2 = fixmul(c1,c1);
+	fix b1 = fix_sqrt(c2 - a2);
+	fix d1 = fixdiv(b1, c1);
+	object * pobj = &Objects[Players[Player_num].objnum];
+	object * cobj = &Objects[master_cam_objnum];
+	if (d1 >= PUSHBOX)
+	{
+		if (pobj->pos.z > cobj->pos.z)	// right pushbox
+		{
+			if (Controls.sideways_thrust_time > 0)
+			{
+				Controls.sideways_thrust_time = 0;
+				pobj->mtype.phys_info.velocity.z = cobj->mtype.phys_info.velocity.z;
+			}
+		}
+		if (pobj->pos.z < cobj->pos.z)	// left pushbox
+		{
+			if (Controls.sideways_thrust_time < 0)
+			{
+				Controls.sideways_thrust_time = 0;
+				pobj->mtype.phys_info.velocity.z = cobj->mtype.phys_info.velocity.z;
+			}
+		}
+	}
+	if (d1 >= KILLBOX)
+			do_crush_death();
+}
+
+void kill_offscreen_weapons()
+{
+	for (int i = 0; i <= Highest_object_index; i++)
+	{
+		if (Objects[i].type == OBJ_WEAPON)
+		{
+			fix a1 = vm_vec_dist_quick(&Objects[Players[Player_num].cam_objnum].pos, &Objects[pushbox_objnum].pos);
+			fix a2 = fixmul(a1,a1);
+			fix c1 = vm_vec_dist_quick(&Objects[Players[Player_num].cam_objnum].pos, &Objects[i].pos);
+			fix c2 = fixmul(c1,c1);
+			fix b1 = fix_sqrt(c2 - a2);
+			fix d1 = fixdiv(b1, c1);
+			if (d1 >= KILLBOX)
+				Objects[i].flags |= OF_SHOULD_BE_DEAD;
+		}
+	}
+}
+
+void handle_x_axis()
+{	
+	for (int i = 0; i <=Highest_object_index; i++)
+	{
+		object * obj = &Objects[i];
+		switch (obj->type)
+		{
+			case OBJ_PLAYER:
+					obj->pos.x = obj->default_pos.x; 
+					if (!Player_is_dead)
+						if (camera_speed > 0)
+						{
+							obj->orient = forward_orient;
+							last_camera_speed = camera_speed;
+						}
+						if (camera_speed < 0)
+						{
+							obj->orient = backward_orient;
+							last_camera_speed = camera_speed;
+						}
+						if (camera_speed == 0 && !last_camera_speed)
+							obj->orient = forward_orient;
+					break;
+			case OBJ_FIREBALL:
+					obj->pos.x = obj->default_pos.x;
+					break;
+			case OBJ_ROBOT:
+					if (obj->default_pos.x)
+						obj->pos.x = obj->default_pos.x;
+					break;
+			case OBJ_HOSTAGE:
+					break;
+			case OBJ_WEAPON:
+					break;
+			case OBJ_CAMERA:
+					break;
+			case OBJ_POWERUP:
+					if (obj->id == POW_FULL_MAP) break;
+					obj->pos.x = x_pos; 
+					break;
+			case OBJ_DEBRIS:
+					break;
+			case OBJ_CNTRLCEN:
+			case OBJ_FLARE:
+			case OBJ_CLUTTER:
+			case OBJ_COOP:
+			case OBJ_MARKER:
+					obj->pos.x = x_pos; 
+					break;
+			case OBJ_POLYBRUSH:
+					obj->orient = Robot_info[i].default_orient;
+					obj->pos = Robot_info[i].default_pos;
+					break;
+		}
+	}
+}
+
+// ~~~~~~~~~~~ axis stuff end
+
+// ~~~~~~~~~~~ brush stuff start
+
+void init_brushes()
+{
+/*
+	for (int i = 0; i <=Highest_object_index; i++)
+	{
+		object * obj = &Objects[i];
+		if (obj->type == OBJ_ROBOT)
+		{
+			obj->type = OBJ_POLYBRUSH;
+			obj->default_orient = obj->orient;
+			obj->default_pos = obj->pos;
+			obj->render_type = RT_POLYOBJ;
+		}	
+	}	
+*/
+}
+
+void update_brush_info()
+{
+/*
+	for (int i = 0; i <=Highest_object_index; i++)
+	{
+		object * obj = &Objects[i];
+		if (obj->type == OBJ_POLYBRUSH)
+		{
+			obj->type = OBJ_POLYBRUSH;
+			obj->orient = obj->default_orient;
+			obj->pos = obj->default_pos;
+			obj->render_type = RT_POLYOBJ;
+		}
+	}
+*/
+}
+
+// ~~~~~~~~~~~ brush stuff end
+
+// ~~~~~~~~~~~ multiplayer stuff start
+
+void send_lives_count()
+{
+	multibuf[0] = DO_LIVES_COUNT;
+	multibuf[1] = Players[Player_num].lives;
+	multi_send_data(multibuf, 2, 2);
+	do_lives_count(multibuf);
+}
+
+void do_lives_count(char *buf)
+{
+	Players[Player_num].lives = buf[1];
+	HUD_init_message(HM_MULTI, "%d lives remaining!", Players[Player_num].lives-1);
+}
+
+void send_add_life()
+{
+	multibuf[1] = DO_ADD_LIFE;
+	multi_send_data(multibuf, 1, 2);
+	do_add_life();
+}
+
+void do_add_life()
+{
+	Players[Player_num].lives++;
+	HUD_init_message(HM_MULTI, "total lives increased to %d!", Players[Player_num].lives-1);
+}
+
+void send_subtract_life()
+{
+	multibuf[0] = DO_SUBTRACT_LIFE;
+	multi_send_data(multibuf, 1, 2);
+	do_subtract_life();
+}
+
+void do_subtract_life()
+{
+	Players[Player_num].lives--;
+	HUD_init_message(HM_MULTI, "%d lives remaining!", Players[Player_num].lives-1);
+}
+
+void do_no_lives_message()
+{
+	HUD_init_message(HM_MULTI, "No lives remaining!");
+}
+
+void send_corruption(int pnum)
+{
+	multibuf[0] = DO_CORRUPTION;
+	multibuf[1] = pnum;
+	multi_send_data(multibuf, 1, 2);
+	do_corruption(multibuf);
+}
+
+void do_corruption()
+{
+	Players[pnum].c_flags &= PLAYER_FLAGS_CORRUPTED;
+}
+
+void kill_onscreen_robots()
+{
+	int total_robots_destroyed = 0;
+	for (int i = 0; i <= Highest_object_index; i++)
+	{
+		if (Objects[i].type == OBJ_ROBOT)
+		{
+			object * robj = &Objects[i];
+			object * pobj = &Objects[Players[Player_num].objnum];
+			fix a1 = vm_vec_dist_quick(&Objects[Players[Player_num].cam_objnum].pos, &Objects[pushbox_objnum].pos);
+			fix a2 = fixmul(a1,a1);
+			fix c1 = vm_vec_dist_quick(&Objects[Players[Player_num].cam_objnum].pos, &Objects[i].pos);
+			fix c2 = fixmul(c1,c1);
+			fix b1 = fix_sqrt(c2 - a2);
+			fix d1 = fixdiv(b1, c1);
+			
+			fix e1 = vm_vec_dist_quick(&Objects[Players[Player_num].objnum].pos, &Objects[i].pos);
+			fix e2 = fixmul(e1,e1);
+			fix f1 = fix_sqrt(e2 - a2);
+			fix g1 = fixdiv(f1, e1);
+			
+			if (d1 <= KILLBOX && d1 != 0 && e1 < 15000000)
+			{
+				apply_damage_to_robot(robj, robj->shields*2, pobj-Objects);
+				add_points_to_score(Robot_info[robj->id].score_value);
+				total_robots_destroyed++;
+			}
+		}
+	}
+	HUD_init_message(HM_DEFAULT, "%d robots destroyed", total_robots_destroyed);
+}
+
+// ~~~~~~~~~~~ multiplayer stuff end
+
+// ~~~~~~~~~~~ misc stuff start
+
+void do_corruption()
+{
+	send_corruption();
+}
+
+void handle_sub_controls()
+{
+#ifdef C_EDITOR
+	object * cobj = &Objects[Players[Player_num].cam_objnum];
+	
+	if ((Controls.vertical_thrust_time < 0 && cobj->pos.x >= CAMERA_MIN_DISTANCE) || (Controls.vertical_thrust_time > 0 && cobj->pos.x <= CAMERA_MAX_DISTANCE)) 	
+		cobj->mtype.phys_info.thrust.x = (FrameTime * Controls.vertical_thrust_time) / 5;
+		
+	if ((cobj->pos.x < CAMERA_MIN_DISTANCE && Controls.vertical_thrust_time < 0) || (cobj->pos.x > CAMERA_MAX_DISTANCE && Controls.vertical_thrust_time > 0)) 
+	{
+		cobj->mtype.phys_info.thrust.x = 0;
+		cobj->mtype.phys_info.velocity.x = 0;
+	}
+	
+	if (!Controls.vertical_thrust_time)
+		cobj->mtype.phys_info.thrust.x = 0;
+#endif
+}
+
+void do_checkpoint(int checkpoint_num)
+{
+	HUD_init_message(HM_DEFAULT, "checkpoint reached");
+	last_checkpoint = checkpoint_num;
+	Objects[master_cam_parent_objnum].segnum = Player_init[last_checkpoint].segnum;  
+	Objects[master_cam_parent_objnum].pos.z = Player_init[last_checkpoint].pos.z;
+	Objects[master_cam_parent_objnum].pos.y = Player_init[last_checkpoint].pos.y;
+	camera_speed_checkpoint = camera_speed;
+}
+
+void reset_all_variables()
+{
+	previous_cam_segment = 0;
+	cam_trigger_num = 0;
+	camera_wall_state = 0;
+}
+
+void do_wall_damage(object *obj, short hitseg, short hitside, vms_vector *hitpt)
+{
+	if (WALL_IS_DOORWAY(&Segments[hitseg],hitside) == WID_TRANSPARENT_WALL) return;
+	fix damage = camera_speed;
+	if (camera_speed < 0) damage *= -1;
+	if (camera_speed == 0) damage = FrameTime / 1024;
+	//apply_damage_to_player(obj, obj, damage, 0);
+}
+
+void do_crush_death()
+{
+	Players[Player_num].shields = 0;
+	Players[Player_num].flags &= ~PLAYER_FLAGS_INVULNERABLE;
+	apply_damage_to_player(&Objects[Players[Player_num].objnum], &Objects[Players[Player_num].objnum], F1_0, 0);
+}
+
+extern fix64 Last_volatile_scrape_sound_time;
+
+void fuelcen_check_for_gradius_special(segment *segp)
+{
+	if (Player_is_dead || Players[Player_num].spec_flags & PLAYER_FLAGS_SPECTATING)	// jinx 01-25-13 spec
+		return;
+		
+	segment2	*seg2p = &Segment2s[segp-Segments];
+	Assert( segp != NULL );
+	
+	object *playerp = &Objects[Players[Player_num].objnum];
+	
+	if (seg2p->special==SEGMENT_IS_GOAL_RED)
+	{
+		if (!(Players[Player_num].flags & PLAYER_FLAGS_AMMO_RACK))
+		{
+			HUD_init_message(HM_DEFAULT, "Your ship is overheating!");
+			fix damage;
+			damage = fixmul(RED_DAMAGE, FrameTime);
+			last_hit_by = ASCENT_PHYSICAL_WEAPON;
+						
+			if (!(Players[Player_num].flags & PLAYER_FLAGS_INVULNERABLE))
+				apply_damage_to_player( playerp, playerp, damage, 0 );
+				
+			PALETTE_FLASH_ADD(f2i(damage*40), 0, 0);	//flash red
+			
+			playerp->mtype.phys_info.rotvel.x = (d_rand() - 16384)/12;
+			playerp->mtype.phys_info.rotvel.z = (d_rand() - 16384)/12;
+			
+			if ((GameTime64 > Last_volatile_scrape_sound_time + F1_0/4) || (GameTime64 < Last_volatile_scrape_sound_time)) 
+			{
+				digi_link_sound_to_pos( SOUND_VOLATILE_WALL_HISS, Objects[Players[Player_num].objnum].segnum, 0, &Objects[Players[Player_num].objnum].pos, 0, F1_0/3 );
+				if (Game_mode & GM_MULTI)
+					multi_send_play_sound(SOUND_VOLATILE_WALL_HISS, F1_0/3);
+				Last_volatile_scrape_sound_time = GameTime64;
+			}
+		}
+		in_lava = 1;
+	}
+	else 
+		in_lava = 0;
+	
+	if ((seg2p->special==SEGMENT_IS_GOAL_BLUE))
+	{
+		HUD_init_message(HM_DEFAULT, "Under water!");
+		in_water = 1;
+		PALETTE_FLASH_ADD(50,50,50);
+	}
+	else
+		in_water = 0;
+	
+	if (!(Game_mode & GM_MULTI_COOP))
+	{
+		if (last_player_segnum != Objects[Players[Player_num].objnum].segnum)
+		{
+			for (int i = 7; i >= 0; i--)
+			{
+				if (Player_init[i].segnum == Objects[Players[Player_num].objnum].segnum && (Player_init[i].segnum != Player_init[last_checkpoint].segnum))
+				{
+					do_checkpoint(i);
+					//HUD_init_message(HM_DEFAULT, "checkpoint detected");
+					//which_checkpoint = i;
+				}
+			}
+			last_player_segnum = Objects[Players[Player_num].objnum].segnum;
+		}
+	}
+}
+
+// ~~~~~~~~~~~ misc stuff end
+
+// ~~~~~~~~~~~ init start
+
+void gradius_init()
+{
+	init_variables();
+	
+	init_positions();
+	init_master_cam();
+	init_spawns();
+	init_sub_camera();
+	init_camera_intermediary();
+	init_pushbox_camera();
+	init_brushes();	
+}
+
+void corruption_new_ship_init()
+{
+	set_default_orientation();
+}
+
+void set_default_orientation()
+{
+	forward_orient = ConsoleObject->orient;
+	backward_orient = forward_orient;
+	backward_orient.rvec.x *= -1;
+	backward_orient.fvec.z *= -1;
+}
+
+void init_spawns()
+{
+	object * objp;
+	objp = &Objects[Players[Player_num].objnum];
+	x_pos = objp->pos.x;
+}
+
+void init_variables()
+{
+	camera_state = level_camera_state_default;
+	level_scroll_rate = level_camera_speed_default;
+	if (!level_camera_speed_default) level_camera_speed_default = 10;
+	
+	previous_cam_segment = 0;
+	cam_trigger_num = 0;
+	camera_wall_state = 0;
+	last_checkpoint = 0;
+	camera_speed_checkpoint = level_camera_speed_default;
+}
+
+void init_positions()
+{
+	for (int i = 0; i <= Highest_object_index; i++)
+	{
+		object * obj = &Objects[i];
+			obj->default_pos = obj->pos;
+	}
+}
+
+// ~~~~~~~~~~~ init end
+
+// ~~~~~~~~~~~ main stuff start
+
+void gradius_frame()
+{
+	do_forced_stuff();
+	do_player_stuff();
+	
+	handle_x_axis();
+	
+	do_master_cam_frame_new();
+	do_camera_triggers();
+	sync_cams();
+	handle_subs();
+	
+	handle_player_pushbox();
+	
+	kill_offscreen_weapons();
+	
+	update_brush_info();
+}
+
+void do_forced_stuff()
+{
+	Controls.rear_view_state = 0;
+	PlayerCfg.CockpitMode[0] = CM_STATUS_BAR;
+	PlayerCfg.CockpitMode[1] = CM_STATUS_BAR;
+	PlayerCfg.Cockpit3DView[0] = CV_NONE;
+	PlayerCfg.Cockpit3DView[1] = CV_NONE;
+	
+	GameArg.SysMaxFPS = 60;
+	GameCfg.VSync = 0;
+	PlayerCfg.AutomapFreeFlight = 0;
+}
+
+void do_player_stuff()
+{
+	object * objp;
+	objp = &Objects[Players[Player_num].objnum];
+	objp->size = PLAYER_SHIP_HITBOX;			
+}
+
+// ~~~~~~~~~~~ main stuff end

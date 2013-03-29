@@ -1,0 +1,130 @@
+#define Gradius 1
+#define C_EDITOR
+
+#include "segment.h"
+#include "fvi.h"
+#include "vecmat.h"
+#include "pstypes.h"
+
+#define PLAYER_SHIP_HITBOX 175000
+
+#define CAMERA_SCROLL_RATE 7
+#define CAMERA_MIN_DISTANCE	4000000
+#define CAMERA_MAX_DISTANCE 8000000
+
+#define CAMERA_ZOOM_RATE 20
+
+#define MAX_LEVEL_SCROLL_RATE 100
+
+#define use_lives 0
+
+void gradius_init();
+void gradius_frame();
+void handle_x_axis();
+
+vms_matrix forward_orient;
+vms_matrix backward_orient;
+
+fix x_pos;
+fix master_cam_objnum;
+fix master_cam_parent_objnum;
+
+int level_scroll_rate;
+
+vms_vector master_cam_objnum_pos;
+vms_vector master_cam_objnum_pos_paused;
+vms_vector highest_master_cam_objnum_pos;
+
+void do_camera_frame();
+
+fix c2p_dist;
+fix last_c2p_dist;
+fix c2p_z;
+float c2p_z_scale;
+fix camera_speed;
+void resync_master_cam();
+void init_master_cam();
+void init_sub_camera();
+void reset_camera_zoom();
+void reset_camera_position();
+void stop_camera_movement(ubyte state);
+void start_camera_movement();
+void change_camera_state(ubyte state);
+void change_camera_speed(int var);
+
+int camera_state;
+int last_camera_state;
+int level_camera_state_default;
+int level_camera_speed_default;
+int last_camera_speed;
+int camera_speed_checkpoint;
+
+#define CAM_PLAYER	0	// camera is following player
+#define CAM_MOVING 	1	// camera is moving on it's own
+#define CAM_PAUSED 	2	// camera is not moving (game is paused)
+#define CAM_DEAD		3	// camera is not moving (player is dead)
+#define CAM_DEFAULT 4 // camera is level default
+
+fix back_wall;
+fix front_wall;
+
+vms_vector wn_0;
+void do_wall_damage(object *obj, short hitseg, short hitside, vms_vector *hitpt);
+
+void fuelcen_check_for_gradius_special (segment *segp);
+
+ubyte in_lava;
+ubyte in_water;
+ubyte can_be_crushed;
+
+void set_default_orientation();
+void init_spawns();
+
+void send_add_life();
+void do_add_life();
+void send_subtract_life();
+void do_subtract_life();
+
+void do_no_lives_message();
+void do_lives_count(char * buf);
+
+void init_brushes();
+
+#define INITIAL_LIVES_COOP 10
+
+ubyte camera_wall_state;
+fix camera_intermediary;
+fix pushbox_objnum;
+void do_camera_triggers();
+fix previous_cam_segment;
+int cam_trigger_num;
+fix master_cam_objnum_seg;
+vms_matrix master_cam_objnum_orient;
+fix	forward_thrust_time;
+
+#define MAX_CAM_TRIGGERS 50
+#define PUSHBOX 48000	// 50,000 is absolute limit of screen horizontally (0 is center of screen, both left and right are positive values)
+#define KILLBOX 52000		// 50,000 is absolute limit of screen horizontally (0 is center of screen, both left and right are positive values)
+
+int num_cam_triggers;
+
+int cam_speed_trigger[MAX_CAM_TRIGGERS];
+
+void reset_all_variables();
+void do_crush_death();
+
+ubyte in_checkpoint;
+ubyte last_checkpoint; 
+ubyte which_checkpoint;
+fix last_player_segnum;
+
+void do_checkpoint(int checkpoint_num);
+void corruption_new_ship_init();
+void camera_init_error();
+void handle_sub_controls();
+void handle_last_state();
+void init_variables();
+void init_positions();
+void do_forced_stuff();
+void do_player_stuff();
+void kill_onscreen_robots();

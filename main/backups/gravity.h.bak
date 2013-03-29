@@ -1,0 +1,151 @@
+#include "segment.h"
+#include "fvi.h"
+#define Ascent 0
+
+#define ASCENT_MISSION_FILENAME	"ascent2"
+#define ASCENT_MISSION_NAME			"Ascent 2: Counterstrikes"
+#define ASCENT_MISSION_HOGSIZE	0
+
+#define AFTERBURNER_JUMP_SCALE	1000
+// 1100
+#define AFTERBURNER_JUMP_RECHARGE_SECONDS	1.3
+// 2
+#define AFTERBURNER_JUMP_USE_SECS	0.1
+// 0.1
+#define AFTERBURNER_SCALE	3700
+// 4000
+#define AFTERBURNER_RECHARGE_SECONDS 4
+// 4
+#define AFTERBURNER_USE_SECS_ASCENT	1.2
+// 1.2
+#define AFTERBURNER_PLUS_USE_SECS_ASCENT 2.2
+// 2.2
+#define AFTERBURNER_USE_ASCENT 20
+// 20
+#define AFTERBURNER_RECHARGE_SECONDS_EMPTY 8
+// 8
+#define BOOSTER_OVERCHARGE_SCALE 5
+// 5
+#define BOOSTER_OVERCHAGE_RATE 1
+// 1
+#define MAX_OBJECT_VEL_ASCENT			i2f(150)
+// max velocity from forcefield
+#define FORCEFIELD_BOUNCE_SCALE	1.3
+
+#define ELEVATOR_THRUST -23
+// -1500000
+#define RED_DAMAGE 100000
+// 100000
+#define ASCENT_LAVA_DAMAGE 524288
+// 524288
+
+#define HITSPEED_MIN_FOR_FALL_DAMAGE	4300000
+// 4300000
+#define FALL_DAMAGE_MULTIPLIER	0
+// 0
+
+#define ASCENT_GROUND_ANGLE 				10
+
+#define SHIP_DRAG_NORMAL						2160
+// default 2160
+#define SHIP_DRAG										1080
+// 1080 is nice
+#define SHIP_SURFACE_AREA						350
+// 350 seems good (default 2160)
+#define SHIP_DRAG_GROUNDED					5000
+
+#define NEUTRAL											0
+
+#define GRAVITY_DEFAULT 							2
+// 2
+#define PLAYER_GRAVITY 							308
+// 308
+// old: 20200000 (scale is: divide old number by (20200000/308) = 65584
+#define FLARE_GRAVITY 								0
+
+#define POWERUP_GRAVITY						137
+
+#define DEBRIS_GRAVITY								50
+
+#define MINE_GRAVITY									15
+
+#define ROBOT_DEATHROLL_GRAVITY_RAND	150
+#define ROBOT_DEATHROLL_GRAVITY_BASE	20			
+
+#define LASER_L1_GRAVITY							10
+#define LASER_L2_GRAVITY							9
+#define LASER_L3_GRAVITY							8
+#define LASER_L4_GRAVITY							7
+#define LASER_L5_GRAVITY							6
+#define LASER_L6_GRAVITY							5
+#define VULCAN_GRAVITY							122
+#define GAUSS_GRAVITY 							308
+#define SPREADFIRE_GRAVITY					30
+#define HELIX_GRAVITY								107
+#define PLASMA_GRAVITY							15
+#define PHOENIX_GRAVITY							91
+
+#define FUSION_GRAVITY								26
+#define FUSION_MULTIPLIER_RATIO				5
+// default 262145 // old: 300000
+
+#define OMEGA_GRAVITY								1
+
+#define CONCUSSION_GRAVITY					18
+#define FLASH_GRAVITY								20
+#define HOMING_GRAVITY							36
+#define GUIDED_GRAVITY								46
+#define SMART_GRAVITY								30
+#define MERCURY_GRAVITY							37
+#define MEGA_GRAVITY 								30
+#define EARTHSHAKER_GRAVITY					46
+
+#define PROXIMITY_GRAVITY						2
+#define SMARTMINE_GRAVITY						76
+
+#define SMART_CHILD_GRAVITY 					21
+#define EARTHSHAKER_CHILD_GRAVITY 		152
+#define SMARTMINE_CHILD_GRAVITY 			17
+
+#define ASCENT_PHYSICAL_WEAPON 2
+#define ASCENT_ENERGY_WEAPON 3
+
+#define ASCENT_ROBOT_DEATHROLL_THRESHOLD 200000
+
+fix Afterburner_charge;
+
+ubyte gravity_on;
+void cycle_gravity(int on_off);
+
+ubyte in_elevator;
+void fuelcen_check_for_ascent_special (segment *segp);
+
+void init_ascent_stuff();
+void do_ascent_frame();
+
+vms_vector floor_normal;
+ubyte gs_0;
+vms_vector fn_0, fn_1, fn_2, fn_3, fn_4, fn_5;
+int seg_1, seg_2, seg_3, seg_4, seg_5;
+int side_1, side_2, side_3, side_4, side_5;
+fix player_grounded;
+
+vms_vector ground_normal;
+fix ascent_check_for_grounded(object *obj, short hitseg, short hitside, vms_vector *hitpt);
+void ascent_do_grounded_stuff(object *obj);
+void ascent_do_airborne_stuff(object *obj);
+
+void ascent_do_robot_death_roll(object *obj);
+
+void ascent_do_friction(object *obj);
+
+ubyte last_hit_by;
+
+void do_checkpoint(object *obj);
+
+void weapon_drag_orientation(object *objp);
+
+ubyte remove_essentials;
+void ascent_remove_essentials();
+
+

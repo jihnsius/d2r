@@ -1,0 +1,10 @@
+name = Scroller
+type = normal
+num_levels = 1
+scroller.RL2
+camera_type = 1
+camera_speed = 10
+num_cam_triggers = 3
+25
+20
+15
