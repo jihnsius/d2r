@@ -24,6 +24,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "instagib.h"
 #include "spec.h"
 #include "ctfc.h"
+#include "rangers.h"
 
 #include "timer.h"
 #include "pstypes.h"
@@ -133,7 +134,7 @@ void show_framerate()
 }
 
 #ifdef NETWORK
-void show_netplayerinfo()
+void show_basic_netplayerinfo()
 {
 	int x=0, y=0, i=0, color=0, eff=0;
 	char *eff_strings[]={"trashing","really hurting","seriously effecting","hurting","effecting","tarnishing"};
@@ -282,6 +283,133 @@ void show_netplayerinfo()
 		gr_printf(0x8000,y,"your rank is: %s",RankStrings[GetMyNetRanking()]);
 	}
 }
+
+void show_account_netplayerinfo()
+{
+	int x=0, y=0, i=0, color=0, eff=0;
+	char *eff_strings[]={"trashing","really hurting","seriously effecting","hurting","effecting","tarnishing"};
+
+	gr_set_current_canvas(NULL);
+	gr_set_curfont(GAME_FONT);
+	gr_set_fontcolor(255,-1);
+
+	x=(SWIDTH/2)-FSPACX(120);
+	y=(SHEIGHT/2)-FSPACY(84);
+
+	gr_settransblend(14, GR_BLEND_NORMAL);
+	gr_setcolor( BM_XRGB(0,0,0) );
+	gr_rect((SWIDTH/2)-FSPACX(120),(SHEIGHT/2)-FSPACY(84),(SWIDTH/2)+FSPACX(120),(SHEIGHT/2)+FSPACY(84));
+	gr_settransblend(GR_FADE_OFF, GR_BLEND_NORMAL);
+
+	// player information (name, kills, ping, game efficiency)
+	y+=LINE_SPACING*2;
+	gr_printf(x,y,"player");
+		
+	gr_printf(x+FSPACX(8)*7,y,"kp");
+	gr_printf(x+FSPACX(8)*12,y,"kp");
+	gr_printf(x+FSPACX(8)*18,y,"gp");
+	gr_printf(x+FSPACX(8)*23,y,"ace");
+	
+	
+	// process players table
+	for (i=0; i<MAX_PLAYERS; i++)
+	{
+		if (!Players[i].connected)
+			continue;
+
+		y+=LINE_SPACING;
+
+		if (Game_mode & GM_TEAM)
+			color=get_team(i);
+		else
+			color=i;
+		gr_set_fontcolor( BM_XRGB(player_rgb[color].r,player_rgb[color].g,player_rgb[color].b),-1 );
+		gr_printf(x,y,"%s\n",Players[i].callsign);
+		if (Game_mode & GM_MULTI_COOP)
+		{
+			gr_printf(x+FSPACX(8)*7,y,"%-6d",Players[i].score);
+			gr_printf(x+FSPACX(8)*18,y,"%-6d",Netgame.players[i].ping);
+		}
+		else if (Game_mode & GM_CAPTURE && ctfc)		// jinx 01-04-13 ctfc
+		{
+			gr_printf(x+FSPACX(8)*5,y,"%-6d",Players[i].net_kills_total);
+			gr_printf(x+FSPACX(8)*8,y,"%-6d",Players[i].net_killed_total);
+			gr_printf(x+FSPACX(8)*13,y,"%-6d",Players[i].flag_points_total);
+			gr_printf(x+FSPACX(8)*15,y,"%-6d",Players[i].flag_captures_total);
+			gr_printf(x+FSPACX(8)*17,y,"%-6d",Players[i].flag_returns_total);
+			gr_printf(x+FSPACX(8)*19,y,"%-6d",Players[i].net_teamkills_total);
+			gr_printf(x+FSPACX(8)*21,y,"%-6d",Netgame.players[i].ping);
+			gr_printf(x+FSPACX(8)*24,y,"%d/%d",kill_matrix[Player_num][i],kill_matrix[i][Player_num]);
+		}
+		else
+		{
+			gr_printf(x+FSPACX(8)*7,y,"%-6d",Players[i].net_kills_total);
+			gr_printf(x+FSPACX(8)*12,y,"%-6d",Players[i].net_killed_total);
+			gr_printf(x+FSPACX(8)*18,y,"%-6d",Netgame.players[i].ping);
+		}
+
+		if ((i != Player_num) && !(Game_mode & GM_CAPTURE))
+			gr_printf(x+FSPACX(8)*23,y,"%d/%d",kill_matrix[Player_num][i],kill_matrix[i][Player_num]);
+	}
+
+	y+=(LINE_SPACING*2)+(LINE_SPACING*(MAX_PLAYERS-N_players));
+
+	// printf team scores
+	if (Game_mode & GM_TEAM)
+	{
+		gr_set_fontcolor(255,-1);
+		gr_printf(x,y,"team");
+		gr_printf(x+FSPACX(8)*8,y,"score");
+		y+=LINE_SPACING;
+		gr_set_fontcolor(BM_XRGB(player_rgb[TEAM_BLUE].r,player_rgb[TEAM_BLUE].g,player_rgb[TEAM_BLUE].b),-1 );
+		gr_printf(x,y,"%s:",Netgame.team_name[0]);
+		gr_printf(x+FSPACX(8)*8,y,"%i",team_kills[0]);
+		y+=LINE_SPACING;
+		gr_set_fontcolor(BM_XRGB(player_rgb[TEAM_RED].r,player_rgb[TEAM_RED].g,player_rgb[TEAM_RED].b),-1 );
+		gr_printf(x,y,"%s:",Netgame.team_name[1]);
+		gr_printf(x+FSPACX(8)*8,y,"%i",team_kills[1]);
+		y+=LINE_SPACING*2;
+	}
+	else
+		y+=LINE_SPACING*4;
+
+	gr_set_fontcolor(255,-1);
+
+	// additional information about game - hoard, ranking
+	eff=(int)((float)((float)PlayerCfg.NetlifeKills/((float)PlayerCfg.NetlifeKilled+(float)PlayerCfg.NetlifeKills))*100.0);
+	if (eff<0)
+		eff=0;
+
+	if (Game_mode & GM_HOARD)
+	{
+		if (PhallicMan==-1)
+			gr_printf(0x8000,y,"There is no record yet for this level."); 
+		else
+			gr_printf(0x8000,y,"%s has the record at %d points.",Players[PhallicMan].callsign,PhallicLimit);
+	}
+	else if (!PlayerCfg.NoRankings)
+	{
+		gr_printf(0x8000,y,"Your lifetime efficiency of %d%% (%d/%d)",eff,PlayerCfg.NetlifeKills,PlayerCfg.NetlifeKilled);
+		y+=LINE_SPACING;
+		if (eff<60)
+			gr_printf(0x8000,y,"is %s your ranking.",eff_strings[eff/10]);
+		else
+			gr_printf(0x8000,y,"is serving you well.");
+		y+=LINE_SPACING;
+		gr_printf(0x8000,y,"your rank is: %s",RankStrings[GetMyNetRanking()]);
+	}
+}
+
+void show_netplayerinfo()	// rangers
+{
+	if (pause_menu_page == 0)
+		show_basic_netplayerinfo();
+	if (pause_menu_page == 1)
+		show_account_netplayerinfo();
+	if (pause_menu_page > 1 || pause_menu_page < 0)
+		pause_menu_page = 0;
+}
+
 #endif
 
 #ifndef NDEBUG

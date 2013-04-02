@@ -1,5 +1,0 @@
-#define  DEFAULT_D4HAMFILE_REGISTERED	"descent4.ham"
-int d4_first_time;
-int D4Equipped();
-void do_d4_stuff();
-void reload_hamfile_first_time();

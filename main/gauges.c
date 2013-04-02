@@ -25,6 +25,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 
 #include "ctfc.h"
 #include "instagib.h"
+#include "rangers.h"
 
 #include "hudmsg.h"
 #include "inferno.h"
@@ -2730,10 +2731,22 @@ void hud_show_kill_list()
 		if (Players[player_num].spec_flags & PLAYER_FLAGS_SPECTATING)			// jinx 02-06-13 spec
 			gr_set_fontcolor(BM_XRGB(99,99,99),-1 );
 			
-		if (Players[player_num].spec_flags & PLAYER_FLAGS_SPECTATING_ME)			// jinx 02-06-13 spec
-			gr_printf(x0,y,"[s] %s",name);
+		if (!timeout_called)
+		{
+			if (Players[player_num].spec_flags & PLAYER_FLAGS_SPECTATING)			// jinx 02-06-13 spec
+				gr_printf(x0,y,"[s] %s",name);
+			else
+				gr_printf(x0,y,"%s",name);
+		}
 		else
-			gr_printf(x0,y,"%s",name);
+		{
+			if (Players[player_num].spec_flags & PLAYER_FLAGS_SPECTATING)			// jinx 02-06-13 spec
+				gr_printf(x0,y,"[s] %s",name);
+			else if (Players[player_num].ready)
+				gr_printf(x0,y,"[r] %s",name);
+			else if (!Players[player_num].ready)
+				gr_printf(x0,y,"%s",name);
+		}
 			
 		if (Show_kill_list==2)
 		{

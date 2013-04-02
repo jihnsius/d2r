@@ -37,6 +37,8 @@ char copyright[] = "DESCENT II  COPYRIGHT (C) 1994-1996 PARALLAX SOFTWARE CORPOR
 #include <sys/types.h>
 #endif
 
+#include "rangers.h"
+
 #include "pstypes.h"
 #include "strutil.h"
 #include "console.h"
@@ -471,6 +473,7 @@ int main(int argc, char *argv[])
 	{
 		Game_mode = GM_GAME_OVER;
 		DoMenu();
+		account_login();
 	}
 
 	setjmp(LeaveEvents);

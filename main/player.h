@@ -21,6 +21,8 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #ifndef _PLAYER_H
 #define _PLAYER_H
 
+#include "rangers2.h"
+
 #include "inferno.h"
 #include "fix.h"
 #include "vecmat.h"
@@ -90,6 +92,13 @@ typedef struct player {
 	//  -- make sure you're 4 byte aligned now!
 	
 	// Game data
+	ubyte ready;
+	ubyte caller;
+	char account_name[ACCOUNT_NAME_LEN+1];
+	char account_password[ACCOUNT_PASSWORD_LEN+1];
+	ubyte squad;
+	ubyte ace_rating;
+	
 	uint	spec_flags;
 	
 	uint    flags;                  // Powerup flags, see below...

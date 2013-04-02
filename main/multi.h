@@ -157,7 +157,16 @@ extern int multi_protocol; // set and determinate used protocol
 
 #define MULTI_SPEC_FLAGS 83
 
-#define MULTI_MAX_TYPE          83
+// rangers block 03-29-13
+#define DO_TIMEOUT 84
+#define DO_READY 85
+#define DO_COUNTDOWN 86
+#define ADD_CALLER 87
+#define REMOVE_CALLER 88
+// end rangers block
+
+
+#define MULTI_MAX_TYPE          88
 
 #define MAX_NET_CREATE_OBJECTS  40
 
@@ -500,6 +509,8 @@ typedef struct netgame_info
 	int						BombIndicator;		// jinx 01-10-13 ctfc
 	int						Descent1;				// jinx 02-02-13 d4
 	int						Instagib;				// jinx 02-06-13 instagib
+	ubyte					scored_game;
+	ubyte					ranked_game;
 	fix						PlayTimeAllowed;
 	fix						level_time;
 	int						control_invul_time;

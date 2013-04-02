@@ -27,6 +27,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 
 #include "instagib.h"
 #include "ctfc.h"
+#include "rangers.h"
 
 
 #include "pstypes.h"
@@ -435,7 +436,16 @@ int pause_handler(window *wind, d_event *event, char *msg)
 					show_help();
 					return 1;
 				case KEY_PAUSE:
-					window_close(wind);
+					if (!pause_menu_page)
+						pause_menu_page++;
+					else if (pause_menu_page)	
+						window_close(wind);
+					return 1;
+				case KEY_PAGEUP:
+					pause_menu_page++;
+					return 1;
+				case KEY_PAGEDOWN:
+					pause_menu_page--;
 					return 1;
 				default:
 					break;
@@ -889,6 +899,13 @@ int HandleSystemKey(int key)
 		KEY_MAC( case KEY_COMMAND+KEY_P: )
 		case KEY_PAUSE:
 			do_game_pause();	break;
+			
+		case KEY_PAGEUP:
+			pause_menu_page++;
+			break;
+		case KEY_PAGEDOWN:
+			pause_menu_page--;
+			break;
 
 
 #ifdef macintosh
@@ -1081,6 +1098,15 @@ extern void DropFlag();
 int HandleGameKey(int key)
 {
 	switch (key) {
+
+#ifdef NETWORK
+		case KEY_F5 + KEY_ALTED:
+			send_timeout(); 
+			return 1;
+		case KEY_F6 + KEY_ALTED:
+			send_ready();
+			return 1;
+#endif	
 
 		case KEY_1 + KEY_SHIFTED:
 		case KEY_2 + KEY_SHIFTED:

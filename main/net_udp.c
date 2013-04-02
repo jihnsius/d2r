@@ -1631,7 +1631,7 @@ void net_udp_send_objects(void)
 	
 	for (i = Network_send_objnum; i <= Highest_object_index; i++)
 	{
-		if ((Objects[i].type != OBJ_SPECTATOR) && (Objects[i].type != OBJ_POWERUP) && (Objects[i].type != OBJ_PLAYER) &&
+		if ((Objects[i].type != OBJ_CAMERA) && (Objects[i].type != OBJ_POWERUP) && (Objects[i].type != OBJ_PLAYER) &&
 				(Objects[i].type != OBJ_CNTRLCEN) && (Objects[i].type != OBJ_GHOST) &&
 				(Objects[i].type != OBJ_ROBOT) && (Objects[i].type != OBJ_HOSTAGE) &&
 				!(Objects[i].type==OBJ_WEAPON && Objects[i].id==PMINE_ID))		// jinx 02-09-13 spec
@@ -1715,7 +1715,7 @@ int net_udp_verify_objects(int remote, int local)
 
 	for (i = 0; i <= Highest_object_index; i++)
 	{
-		if ((Objects[i].type == OBJ_PLAYER) || (Objects[i].type == OBJ_GHOST) || (Objects[i].type == OBJ_SPECTATOR))
+		if ((Objects[i].type == OBJ_PLAYER) || (Objects[i].type == OBJ_GHOST) || (Objects[i].type == OBJ_CAMERA))
 			nplayers++;
 	}
 
@@ -1896,7 +1896,7 @@ void net_udp_resend_sync_due_to_packet_loss()
 char * net_udp_get_player_name( int objnum )
 {
 	if ( objnum < 0 ) return NULL; 
-	if ((Objects[objnum].type != OBJ_PLAYER) && (Objects[objnum].type != OBJ_SPECTATOR)) return NULL;			// jinx 02-09-13 spec
+	if ((Objects[objnum].type != OBJ_PLAYER) && (Objects[objnum].type != OBJ_CAMERA)) return NULL;			// jinx 02-09-13 spec
 	if ( Objects[objnum].id >= MAX_PLAYERS ) return NULL;
 	if ( Objects[objnum].id >= N_players ) return NULL;
 	

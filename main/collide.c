@@ -1822,7 +1822,7 @@ void drop_missile_1_or_4(object *playerobj,int missile_index)
 
 void drop_player_eggs(object *playerobj)
 {
-	if ((playerobj->type == OBJ_PLAYER) || (playerobj->type == OBJ_GHOST) || (playerobj->type == OBJ_SPECTATOR)) 	// jinx 01-26-13 spec
+	if ((playerobj->type == OBJ_PLAYER) || (playerobj->type == OBJ_GHOST) || (playerobj->type == OBJ_CAMERA)) 	// jinx 01-26-13 spec
 	{
 		int	rthresh;
 		int	pnum = playerobj->id;
@@ -2620,7 +2620,7 @@ void collide_init()	{
 
 	ENABLE_COLLISION( OBJ_DEBRIS, OBJ_WALL );
 	
-	ENABLE_COLLISION( OBJ_SPECTATOR, OBJ_WALL );	// jinx 01-28-13 spec
+	ENABLE_COLLISION( OBJ_CAMERA, OBJ_WALL );	// jinx 01-28-13 spec
 }
 
 void collide_object_with_wall( object * A, fix hitspeed, short hitseg, short hitwall, vms_vector * hitpt )
@@ -2630,7 +2630,6 @@ void collide_object_with_wall( object * A, fix hitspeed, short hitseg, short hit
 	case OBJ_NONE:
 		Error( "A object of type NONE hit a wall!\n");
 		break;
-	case OBJ_SPECTATOR: collide_player_and_wall(A,hitspeed,hitseg,hitwall,hitpt); break;	// jinx 01-25-13 spec
 	case OBJ_PLAYER:		collide_player_and_wall(A,hitspeed,hitseg,hitwall,hitpt); break;
 	case OBJ_WEAPON:		collide_weapon_and_wall(A,hitspeed,hitseg,hitwall,hitpt); break;
 	case OBJ_DEBRIS:		collide_debris_and_wall(A,hitspeed,hitseg,hitwall,hitpt); break;
@@ -2638,7 +2637,7 @@ void collide_object_with_wall( object * A, fix hitspeed, short hitseg, short hit
 	case OBJ_FIREBALL:	break;		//collide_fireball_and_wall(A,hitspeed,hitseg,hitwall,hitpt);
 	case OBJ_ROBOT:		collide_robot_and_wall(A,hitspeed,hitseg,hitwall,hitpt); break;
 	case OBJ_HOSTAGE:		break;		//collide_hostage_and_wall(A,hitspeed,hitseg,hitwall,hitpt);
-	case OBJ_CAMERA:		break;		//collide_camera_and_wall(A,hitspeed,hitseg,hitwall,hitpt);
+	case OBJ_CAMERA:		break;		collide_player_and_wall(A,hitspeed,hitseg,hitwall,hitpt);
 	case OBJ_POWERUP:		break;		//collide_powerup_and_wall(A,hitspeed,hitseg,hitwall,hitpt);
 	case OBJ_GHOST:		break;	//do nothing
 	

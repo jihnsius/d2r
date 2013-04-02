@@ -35,6 +35,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "d1.h"
 #include "jinx.h"
 #include "promod.h"
+#include "rangers.h"
 
 #include "object.h"
 #include "ctfc.h"
@@ -166,7 +167,7 @@ void verify_console_object()
 	Assert( Player_num > -1 );
 	Assert( Players[Player_num].objnum > -1 );
 	ConsoleObject = &Objects[Players[Player_num].objnum];
-	Assert( (ConsoleObject->type==OBJ_PLAYER) || (ConsoleObject->type==OBJ_SPECTATOR));		// jinx 02-06-13 spec
+	Assert( (ConsoleObject->type==OBJ_PLAYER) || (ConsoleObject->type==OBJ_CAMERA));		// jinx 02-06-13 spec
 	Assert( ConsoleObject->id==Player_num );
 }
 
@@ -212,7 +213,7 @@ gameseq_init_network_players()
 	j = 0;
 	for (i=0;i<=Highest_object_index;i++) {
 
-		if (( Objects[i].type==OBJ_PLAYER )	|| (Objects[i].type == OBJ_GHOST) || (Objects[i].type == OBJ_COOP) || (Objects[i].type == OBJ_SPECTATOR))		// jinx 02-06-13 spec
+		if (( Objects[i].type==OBJ_PLAYER )	|| (Objects[i].type == OBJ_GHOST) || (Objects[i].type == OBJ_COOP) || (Objects[i].type == OBJ_CAMERA))		// jinx 02-06-13 spec
 		{
 			if ( (!(Game_mode & GM_MULTI_COOP) && ((Objects[i].type == OBJ_PLAYER)||(Objects[i].type==OBJ_GHOST))) ||
 	           ((Game_mode & GM_MULTI_COOP) && ((j == 0) || ( Objects[i].type==OBJ_COOP ))) )
@@ -321,6 +322,15 @@ void init_player_stats_game(ubyte pnum)
 
 	if (pnum == Player_num)
 		First_secret_visit = 1;
+		
+	Players[pnum].caller = 0;
+		
+	if (pnum == Player_num)
+	{
+		timeout_frame();
+		if (pnum == multi_who_is_master())
+			Players[pnum].caller = 1;
+	}
 }
 
 void init_ammo_and_energy(void)

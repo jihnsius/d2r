@@ -196,7 +196,6 @@ extern void init_player_stats_new_ship(ubyte pnum);
 
 
 
-
 static const int message_length[MULTI_MAX_TYPE+1] = {
 	25, // POSITION
 	4,  // REAPPEAR
@@ -282,6 +281,11 @@ static const int message_length[MULTI_MAX_TYPE+1] = {
 	9, // MULTI_NEW_KILL_HOST
 	7, // MULTI_NEW_KILL_CLIENT
 	6, // MULTI_SEND_FLAGS
+	2, // DO_TIMEOUT
+	2, // DO_READY
+	1, // DO_COUNTDOWN
+	2, // ADD_CALLER
+	2, // REMOVE_CALLER
 };
 
 char PowerupsInMine[MAX_POWERUP_TYPES],MaxPowerupsAllowed[MAX_POWERUP_TYPES];
@@ -1559,33 +1563,6 @@ void multi_send_message_end()
 		return;
 	}
 	
-	else if (!d_strnicmp (Network_message,"/flags",5) && (Game_mode & GM_NETWORK) && !Control_center_destroyed)
-	{
-		int total_flags = 0;
-		HUD_init_message(HM_CONSOLE, "Players[ %d ].flags:", Player_num);
-		if (Players[Player_num].flags & PLAYER_FLAGS_INVULNERABLE) { HUD_init_message(HM_CONSOLE, "PLAYER_FLAGS_INVULNERABLE"); total_flags++; }
-		if (Players[Player_num].flags &  PLAYER_FLAGS_BLUE_KEY) { HUD_init_message(HM_CONSOLE, "PLAYER_FLAGS_BLUE_KEY"); total_flags++; }
-		if (Players[Player_num].flags &  PLAYER_FLAGS_RED_KEY) { HUD_init_message(HM_CONSOLE, "PLAYER_FLAGS_RED_KEY"); total_flags++; }
-		if (Players[Player_num].flags &  PLAYER_FLAGS_GOLD_KEY) { HUD_init_message(HM_CONSOLE, "PLAYER_FLAGS_GOLD_KEY"); total_flags++; }
-		if (Players[Player_num].flags &  PLAYER_FLAGS_FLAG) { HUD_init_message(HM_CONSOLE, "PLAYER_FLAGS_FLAG"); total_flags++; }
-		if (Players[Player_num].flags &  PLAYER_FLAGS_MAP_ALL) { HUD_init_message(HM_CONSOLE, "PLAYER_FLAGS_MAP_ALL"); total_flags++; }
-		if (Players[Player_num].flags &  PLAYER_FLAGS_AMMO_RACK) { HUD_init_message(HM_CONSOLE, "PLAYER_FLAGS_AMMO_RACK"); total_flags++; }
-		if (Players[Player_num].flags &  PLAYER_FLAGS_CONVERTER) { HUD_init_message(HM_CONSOLE, "PLAYER_FLAGS_CONVERTER"); total_flags++; }
-		if (Players[Player_num].flags &  PLAYER_FLAGS_QUAD_LASERS) { HUD_init_message(HM_CONSOLE, "PLAYER_FLAGS_QUAD_LASERS"); total_flags++; }
-		if (Players[Player_num].flags &  PLAYER_FLAGS_CLOAKED) { HUD_init_message(HM_CONSOLE, "PLAYER_FLAGS_CLOAKED"); total_flags++; }
-		if (Players[Player_num].flags &  PLAYER_FLAGS_AFTERBURNER) { HUD_init_message(HM_CONSOLE, "PLAYER_FLAGS_AFTERBURNER"); total_flags++; }
-		if (Players[Player_num].flags &  PLAYER_FLAGS_HEADLIGHT) { HUD_init_message(HM_CONSOLE, "PLAYER_FLAGS_HEADLIGHT"); total_flags++; }
-		if (Players[Player_num].flags &  PLAYER_FLAGS_HEADLIGHT_ON) { HUD_init_message(HM_CONSOLE, "PLAYER_FLAGS_HEADLIGHT_ON"); total_flags++; }
-		if (Players[Player_num].spec_flags &  PLAYER_FLAGS_SPECTATING) { HUD_init_message(HM_CONSOLE, "PLAYER_FLAGS_SPECTATING"); total_flags++; }
-		if (Players[Player_num].spec_flags &  PLAYER_FLAGS_SPECTATING_ME) { HUD_init_message(HM_CONSOLE, "PLAYER_FLAGS_SPECTATING_ME"); total_flags++; }
-		HUD_init_message(HM_CONSOLE, "Total player flags: %d", total_flags);
-		
-		multi_message_index = 0;
-		multi_sending_message[Player_num] = 0;
-		multi_send_msgsend_state(0);
-		return;
-	}
-	
 	else if (!d_strnicmp (Network_message,"/list",5) && (Game_mode & GM_NETWORK) && !Control_center_destroyed)
 	{
 		
@@ -1798,6 +1775,16 @@ multi_do_message(char *buf)
 		strcpy (mesbuf+strlen(Players[Player_num].callsign)+tloc,buf+loc+tloc+1);
 		strcpy (buf+loc,mesbuf);
 	}
+	
+	if ((tilde=strchr (buf+loc,'&')))  // do that stupid name stuff
+	{											// why'd I put this in?  Probably for the
+		tloc=tilde-(buf+loc);				// same reason you can name your guidebot
+		if (tloc>0)
+			strncpy (mesbuf,buf+loc,tloc);
+		strcpy (mesbuf+tloc,Players[Objects[Players[(int)buf[1]].killer_objnum].id].callsign);
+		strcpy (mesbuf+strlen(Players[Objects[Players[(int)buf[1]].killer_objnum].id].callsign)+tloc,buf+loc+tloc+1);
+		strcpy (buf+loc,mesbuf);
+	}
 
 	if (((colon = strstr(buf+loc, ": ")) == NULL) || (colon-(buf+loc) < 1) || (colon-(buf+loc) > CALLSIGN_LEN))
 	{
@@ -1879,14 +1866,8 @@ multi_do_reappear(char *buf)
 	if (pnum != Objects[objnum].id)
 		return;
 
-	if ((pnum != piggy_num) || (spec == 0))
-	{	
-		multi_make_ghost_player(Objects[objnum].id);
-	}
-	if ((pnum == piggy_num) && (spec == 1))
-	{
-		make_piggy_invisible(pnum);
-	}
+	multi_make_ghost_player(Objects[objnum].id);
+
 	create_player_appearance_effect(&Objects[objnum]);
 	PKilledFlags[pnum]=0;
 }
@@ -2572,7 +2553,7 @@ void multi_reset_player_object(object *objp)
 
 	Assert(objp >= Objects);
 	Assert(objp <= Objects+Highest_object_index);
-	Assert((objp->type == OBJ_PLAYER) || (objp->type == OBJ_GHOST) || (objp->type == OBJ_SPECTATOR));	// jinx 01-26-13 spec
+	Assert((objp->type == OBJ_PLAYER) || (objp->type == OBJ_GHOST) || (objp->type == OBJ_CAMERA));	// jinx 01-26-13 spec
 
 	vm_vec_zero(&objp->mtype.phys_info.velocity);
 	vm_vec_zero(&objp->mtype.phys_info.thrust);
@@ -2602,7 +2583,7 @@ void multi_reset_player_object(object *objp)
 
 	objp->flags = 0;
 
-	if ((objp->type == OBJ_GHOST) || (objp->type == OBJ_SPECTATOR))		// jinx 01-25-13 spec
+	if ((objp->type == OBJ_GHOST) || (objp->type == OBJ_CAMERA))		// jinx 01-25-13 spec
 		objp->render_type = RT_NONE;
 
 }
@@ -3142,8 +3123,7 @@ multi_send_position(int objnum)
 /*
  * I was killed. If I am host, send this info to everyone and compute kill. If I am just a Client I'll only send the kill but not compute it for me. I (Client) will wait for Host to send me my kill back together with updated game_mode related variables which are important for me to compute consistent kill.
  */
-void
-multi_send_kill(int objnum)
+void multi_send_kill(int objnum)
 {
 	// I died, tell the world.
 
@@ -5979,7 +5959,7 @@ void multi_object_to_object_rw(object *obj, object_rw *obj_rw)
 		case RT_NONE: // HACK below
 		{
 			int i;
-			if (obj->render_type == RT_NONE && (obj->type != OBJ_GHOST && obj->type != OBJ_SPECTATOR)) // HACK: when a player is dead or not connected yet, clients still expect to get polyobj data - even if render_type == RT_NONE at this time.
+			if (obj->render_type == RT_NONE && (obj->type != OBJ_GHOST && obj->type != OBJ_CAMERA)) // HACK: when a player is dead or not connected yet, clients still expect to get polyobj data - even if render_type == RT_NONE at this time.
 				break;		// jinx 01-25-13 spec
 			obj_rw->rtype.pobj_info.model_num                = obj->rtype.pobj_info.model_num;
 			for (i=0;i<MAX_SUBMODELS;i++)
@@ -6131,7 +6111,7 @@ void multi_object_rw_to_object(object_rw *obj_rw, object *obj)
 		case RT_NONE: // HACK below
 		{
 			int i;
-			if (obj->render_type == RT_NONE && (obj->type != OBJ_GHOST && obj->type != OBJ_SPECTATOR)) // HACK: when a player is dead or not connected yet, clients still expect to get polyobj data - even if render_type == RT_NONE at this time.
+			if (obj->render_type == RT_NONE && (obj->type != OBJ_GHOST && obj->type != OBJ_CAMERA)) // HACK: when a player is dead or not connected yet, clients still expect to get polyobj data - even if render_type == RT_NONE at this time.
 				break;	// jinx 01-25-13 spec
 			obj->rtype.pobj_info.model_num                = obj_rw->rtype.pobj_info.model_num;
 			for (i=0;i<MAX_SUBMODELS;i++)

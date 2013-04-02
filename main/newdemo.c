@@ -519,15 +519,6 @@ void nd_read_object(object *obj)
 		obj->rtype.pobj_info.subobj_flags = 0;
 		break;
 		
-	case OBJ_SPECTATOR:		// jinx 02-10-13 spec
-		obj->control_type = CT_NONE;
-		obj->render_type = RT_NONE;
-		obj->movement_type = MT_PHYSICS;
-		obj->size = Polygon_models[Player_ship->model_num].rad;
-		obj->rtype.pobj_info.model_num = Player_ship->model_num;
-		obj->rtype.pobj_info.subobj_flags = 0;
-		break;
-
 	case OBJ_CLUTTER:
 		obj->control_type = CT_NONE;
 		obj->movement_type = MT_NONE;
@@ -718,7 +709,13 @@ void nd_write_object(object *obj)
 	nd_write_short(shortsig);
 	nd_write_shortpos(obj);
 
-	if ((obj->type != OBJ_SPECTATOR) && (obj->type != OBJ_HOSTAGE) && (obj->type != OBJ_ROBOT) && (obj->type != OBJ_PLAYER) && (obj->type != OBJ_POWERUP) && (obj->type != OBJ_CLUTTER)) {		// jinx 02-10-13 spec
+	if ((obj->type != OBJ_CAMERA) && (obj->type != OBJ_HOSTAGE) && (obj->type != OBJ_ROBOT) && (obj->type != OBJ_PLAYER) && (obj->type != OBJ_POWERUP) && (obj->type != OBJ_CLUTTER)) {		// jinx 02-10-13 spec
+		nd_write_byte(obj->control_type);
+		nd_write_byte(obj->movement_type);
+		nd_write_fix(obj->size);
+	}
+	if (obj->type == OBJ_CAMERA)
+	{
 		nd_write_byte(obj->control_type);
 		nd_write_byte(obj->movement_type);
 		nd_write_fix(obj->size);

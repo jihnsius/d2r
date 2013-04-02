@@ -266,7 +266,7 @@ int do_powerup(object *obj)
 		{
 			if (i == Player_num || Players[i].connected != CONNECT_PLAYING)
 				continue;
-			if (Objects[Players[i].objnum].type == OBJ_GHOST || Players[i].shields < 0 || Objects[Players[i].objnum].type == OBJ_SPECTATOR)	// jinx 01-25-13 spec
+			if (Objects[Players[i].objnum].type == OBJ_GHOST || Players[i].shields < 0 || Objects[Players[i].objnum].type == OBJ_CAMERA)	// jinx 01-25-13 spec
 				continue;
 			if (mydist > vm_vec_normalized_dir(&tvec, &obj->pos, &Objects[Players[i].objnum].pos))
 				return 0;

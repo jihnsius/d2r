@@ -1,0 +1,5 @@
+04-01-13
+Initial commit
+- Carried over from previous projects: instagib, capture the flag classic, spectator system, semi-functional console and scripting environment
+- Menu redesigned, basic account gui implementation
+- Reworked spectator system; demo recording/playback now works.

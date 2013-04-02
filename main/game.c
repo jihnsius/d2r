@@ -32,6 +32,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "spec.h"
 #include "ctfc.h"
 #include "jinx.h"
+#include "rangers.h"
 //
 
 #include "pstypes.h"
@@ -336,10 +337,11 @@ int set_screen_mode(int sm)
 	return 1;
 }
 
-static int time_paused=0;
+static int time_paused = 0;
 
 void stop_time()
 {
+	if (timeout_called) return;
 	if (time_paused==0) {
 		fix64 time;
 		timer_update();
@@ -354,6 +356,7 @@ void stop_time()
 
 void start_time()
 {
+	if (timeout_called) return;
 	time_paused--;
 	Assert(time_paused >= 0);
 	if (time_paused==0) {
@@ -362,6 +365,37 @@ void start_time()
 		time = timer_query();
 		last_timer_value = time - last_timer_value;
 	}
+}
+
+void timeout_frame()
+{
+	if (!Netgame.scored_game && !Netgame.ranked_game) return;
+	if (timeout_called) return;
+	if (Players[Player_num].spec_flags & PLAYER_FLAGS_SPECTATING) return;
+		
+		fix64 time;
+		timer_update();
+		time = timer_query();
+		last_timer_value = time - last_timer_value;
+		if (last_timer_value < 0) {
+			last_timer_value = 0;
+		}
+		time_paused++;
+	timeout_called = 1;
+	HUD_init_message(HM_MULTI, "timeout!");
+}
+
+void do_resume()
+{
+	if (!Netgame.scored_game && !Netgame.ranked_game) return;
+	if (!timeout_called) return;
+	
+	timeout_called = 0;
+	fix64 time;
+	timer_update();
+	time = timer_query();
+	last_timer_value = time - last_timer_value;
+	time_paused--;
 }
 
 void game_flush_inputs()

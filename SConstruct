@@ -5,8 +5,8 @@ import sys
 import os
 import SCons.Util
 
-PROGRAM_NAME = 'descent-descent-revolution'
-target = 'descent-descent-revolution'
+PROGRAM_NAME = 'd2r'
+target = 'd2r'
 
 # version number
 D2XMAJOR = 0
@@ -179,7 +179,8 @@ common_sources = [
 'texmap/ntmap.c',
 'texmap/scanline.c',
 'main/spec.c',
-'main/ctfc.c'
+'main/ctfc.c',
+'main/rangers.c'
 ]
 
 # for editor

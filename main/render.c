@@ -1627,12 +1627,15 @@ void render_frame(fix eye_offset, int window_num)
 		return;
 	}
 
+	
 	if ( Newdemo_state == ND_STATE_RECORDING && eye_offset >= 0 )	{
      
       if (RenderingType==0)
    		newdemo_record_start_frame(FrameTime );
       if (RenderingType!=255)
-   		newdemo_record_viewer_object(Viewer);
+	  {
+			newdemo_record_viewer_object(Viewer);
+		}
 	}
   
    //Here:
@@ -1647,10 +1650,10 @@ void render_frame(fix eye_offset, int window_num)
 		
 	if ((Players[Player_num].spec_flags & PLAYER_FLAGS_SPECTATING) && (in_free == 0))
 	{
-		Viewer_eye = Objects[Players[piggy_num].objnum].pos;		// jinx 02-06-13 spec
-		Viewer->orient = Objects[Players[piggy_num].objnum].orient;
-		//Viewer_eye = Objects[piggy_num].pos;
-		//Viewer->orient = Objects[piggy_num].orient;
+		//Viewer_eye = Objects[Players[piggy_num].objnum].pos;		// jinx 02-06-13 spec
+		//Viewer->orient = Objects[Players[piggy_num].objnum].orient;
+		Viewer_eye = Objects[piggy_num].pos;
+		Viewer->orient = Objects[piggy_num].orient;
 	}
 		
 //	if (Viewer->type == OBJ_PLAYER && (PlayerCfg.CockpitMode[1]!=CM_REAR_VIEW))

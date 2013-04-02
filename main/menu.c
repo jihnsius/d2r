@@ -20,6 +20,8 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include <stdio.h>
 #include <string.h>
 
+#include "rangers.h"
+
 #include "menu.h"
 #include "inferno.h"
 #include "game.h"
@@ -98,6 +100,7 @@ enum MENUS
     #if defined(USE_UDP)
         MENU_MULTIPLAYER,
     #endif
+	MENU_ACCOUNT,
 
     MENU_SHOW_CREDITS,
     MENU_ORDER_INFO,
@@ -394,7 +397,167 @@ int RegisterPlayer()
 			citem = i;
 
 	newmenu_listbox1(TXT_SELECT_PILOT, NumItems, m, allow_abort_flag, citem, (int (*)(listbox *, d_event *, void *))player_menu_handler, list);
+	
+	return 1;
+}
 
+int account_login_verified()
+{
+	char name1[ACCOUNT_NAME_LEN] = "jinx";
+	if (!strcmp(name1,Players[Player_num].account_name))
+		if (!strcmp(name1,Players[Player_num].account_password))
+			return 1;
+	
+	return 0;
+}
+
+void account_login()	// rangers
+{
+	try_again:
+	if (account_login_name(1))
+	{
+		if (account_login_password(1))
+		{
+			if (!account_login_verified())
+			{
+				HUD_init_message(HM_CONSOLE, "server: invalid username or password");
+				goto try_again;
+			}
+			if (account_login_verified())
+			{
+				HUD_init_message(HM_CONSOLE, "signing into account %s", Players[Player_num].account_name);
+				if (account_fetch_details())
+					HUD_init_message(HM_CONSOLE, "server: signed in as %s", Players[Player_num].account_name);
+				return;
+			}
+		}
+	}
+	HUD_init_message(HM_CONSOLE, "an error has occured while signing in");
+}
+
+void account_logout()
+{
+	HUD_init_message(HM_CONSOLE, "server: signing out");
+	strcpy(Players[Player_num].account_name,"");
+	strcpy(Players[Player_num].account_password,"");
+	HUD_init_message(HM_CONSOLE, "successfully signed out", Players[Player_num].account_name);
+}
+
+void do_account()
+{
+	if (!d_stricmp(Players[Player_num].account_name,""))
+	{
+		strcpy(Players[Player_num].account_name,"");
+		strcpy(Players[Player_num].account_password,"");
+		account_login();
+	}
+	else
+	{
+		account_logout();
+	}
+}
+
+int account_fetch_details()
+{
+	char name1[ACCOUNT_NAME_LEN] = "jinx";
+	char name2[ACCOUNT_NAME_LEN] = "ryusei";
+
+	int choice = 0;
+	
+	if (!strcmp(name1,Players[Player_num].account_name))
+	{
+		choice = nm_messagebox( NULL, 2, "yes", "no", "%s \n squad: blue \n rank: ranger \n ace rating: ****", Players[Player_num].account_name );
+		if (choice == 0)
+		{
+			Players[Player_num].squad = 2;
+			Players[Player_num].ace_rating = 4;
+			return 1;
+		}
+	}
+	if (!strcmp(name2,Players[Player_num].account_name))
+	{
+		choice = nm_messagebox( NULL, 2, "yes", "no", "%s \n squad: red \n rank: 1st lieutenant \n ace rating: ***", Players[Player_num].account_name );
+		if (choice == 0)
+		{
+			Players[Player_num].squad = 2;
+			Players[Player_num].ace_rating = 4;
+			return 1;
+		}
+	}
+	HUD_init_message(HM_CONSOLE, "an error has occurred while syncing with the server");	
+	return 0;
+}
+
+int account_login_name(int allow_abort)	// rangers
+{
+	int x;
+	newmenu_item m;
+	char text[ACCOUNT_NAME_LEN+9]="";
+	
+	//gr_set_current_canvas(NULL);
+	gr_set_curfont(GAME_FONT);
+	gr_set_fontcolor(BM_XRGB(6,6,6),-1);
+	gr_printf(0x8000,SHEIGHT-LINE_SPACING,TXT_COPYRIGHT);
+	
+	strncpy(text, Players[Player_num].account_name,ACCOUNT_NAME_LEN);
+
+	m.type=NM_TYPE_INPUT; m.text_len = ACCOUNT_NAME_LEN; m.text = text;
+
+	Newmenu_allowed_chars = playername_allowed_chars;
+	x = newmenu_do( NULL, "account name\n <esc> aborts", 1, &m, NULL, NULL );
+	Newmenu_allowed_chars = NULL;
+
+	if ( x < 0 ) {
+		if ( allow_abort ) 
+		{
+			strcpy(Players[Player_num].account_name,"");
+			strcpy(Players[Player_num].account_password,"");
+			return 0;
+		}
+	}
+	
+	if (text[0]==0)	//null string
+		return 0;
+
+	d_strlwr(text);
+
+	strncpy(Players[Player_num].account_name, text, ACCOUNT_NAME_LEN);
+	d_strlwr(Players[Player_num].account_name);
+	
+	return 1;
+}
+
+int account_login_password(int allow_abort)	// rangers
+{
+	int x;
+	newmenu_item m;
+	char text[ACCOUNT_NAME_LEN+9]="";
+	
+	strncpy(text, Players[Player_num].account_password,ACCOUNT_PASSWORD_LEN);
+
+	m.type=NM_TYPE_INPUT; m.text_len = ACCOUNT_PASSWORD_LEN; m.text = text;
+
+	Newmenu_allowed_chars = playername_allowed_chars;
+	x = newmenu_do( NULL, "account password\n <esc> aborts", 1, &m, NULL, NULL );
+	Newmenu_allowed_chars = NULL;
+
+	if (text[0]==0)	//null string
+		return 0;
+		
+	if ( x < 0 ) {
+		if ( allow_abort ) 
+		{
+			strcpy(Players[Player_num].account_name,"");
+			strcpy(Players[Player_num].account_password,"");
+			return 0;
+		}
+	}
+
+	d_strlwr(text);
+
+	strncpy(Players[Player_num].account_password, text, ACCOUNT_PASSWORD_LEN);
+	d_strlwr(Players[Player_num].account_password);
+	
 	return 1;
 }
 
@@ -405,8 +568,8 @@ void draw_copyright()
 	gr_set_curfont(GAME_FONT);
 	gr_set_fontcolor(BM_XRGB(6,6,6),-1);
 	gr_printf(0x8000,SHEIGHT-LINE_SPACING,TXT_COPYRIGHT);
-	gr_set_fontcolor( BM_XRGB(25,0,0), -1);
-	gr_printf(0x8000,SHEIGHT-(LINE_SPACING*2),DESCENT_VERSION);
+	gr_set_fontcolor( BM_XRGB(0,0,25), -1);
+	gr_printf(0x8000,SHEIGHT-(LINE_SPACING*2),"d2r v0.01a");
 }
 
 //returns the number of demo files on the disk
@@ -497,22 +660,21 @@ void create_main_menu(newmenu_item *m, int *menu_choice, int *callers_num_option
 	#ifndef DEMO_ONLY
 	num_options = 0;
 
-	ADD_ITEM(TXT_NEW_GAME,MENU_NEW_GAME,KEY_N);
+	ADD_ITEM("asdf\tnew game",MENU_NEW_GAME,KEY_N);
 
-	ADD_ITEM(TXT_LOAD_GAME,MENU_LOAD_GAME,KEY_L);
+	ADD_ITEM("\tload game",MENU_LOAD_GAME,KEY_L);
 #if defined(USE_UDP)
-	ADD_ITEM(TXT_MULTIPLAYER_,MENU_MULTIPLAYER,-1);
+	ADD_ITEM("\tmultiplayer",MENU_MULTIPLAYER,-1);
 #endif
-
-	ADD_ITEM(TXT_OPTIONS_, MENU_CONFIG, -1 );
-	ADD_ITEM(TXT_CHANGE_PILOTS,MENU_NEW_PLAYER,unused);
-	ADD_ITEM(TXT_VIEW_DEMO,MENU_DEMO_PLAY,0);
-	ADD_ITEM(TXT_VIEW_SCORES,MENU_VIEW_SCORES,KEY_V);
-	if (PHYSFSX_exists("orderd2.pcx",1)) /* SHAREWARE */
-		ADD_ITEM(TXT_ORDERING_INFO,MENU_ORDER_INFO,-1);
-	ADD_ITEM(TXT_CREDITS,MENU_SHOW_CREDITS,-1);
+	ADD_ITEM("\tlogin/logout",MENU_ACCOUNT,-1);
+		
+	ADD_ITEM("\toptions...", MENU_CONFIG, -1 );
+	ADD_ITEM("\tchange pilot",MENU_NEW_PLAYER,unused);
+	ADD_ITEM("\tview demo",MENU_DEMO_PLAY,0);
+	ADD_ITEM("\tcharts",MENU_VIEW_SCORES,KEY_V);
+	ADD_ITEM("\tcredits",MENU_SHOW_CREDITS,-1);
 	#endif
-	ADD_ITEM(TXT_QUIT,MENU_QUIT,KEY_Q);
+	ADD_ITEM("\tquit",MENU_QUIT,KEY_Q);
 
 	#ifndef RELEASE
 	if (!(Game_mode & GM_MULTI ))	{
@@ -525,6 +687,9 @@ void create_main_menu(newmenu_item *m, int *menu_choice, int *callers_num_option
 	}
 	ADD_ITEM("  SANDBOX", MENU_SANDBOX, -1);
 	#endif
+	
+	m[num_options].type = NM_TYPE_TEXT; m[num_options++].text = "                                          ";
+	// there's got to be a better way to do this
 
 	*callers_num_options = num_options;
 }
@@ -622,6 +787,9 @@ int do_option ( int select)
 			do_multi_player_menu();
 			break;
 #endif
+		case MENU_ACCOUNT:
+			do_account();
+			break;
 		case MENU_CONFIG:
 			do_options_menu();
 			break;

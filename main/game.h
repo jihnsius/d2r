@@ -46,6 +46,8 @@ extern fix64 Next_missile_fire_time;  // Time at which player can next fire his 
 extern fix64 Next_flare_fire_time;
 extern fix Laser_delay_time;        // Delay between laser fires.
 
+
+
 extern struct object *Missile_viewer;
 extern int Missile_viewer_sig;
 
@@ -82,8 +84,9 @@ extern int ft_preference;
 #define GM_HOARD        1024    // New hoard mode for D2 Christmas
 #define GM_BOUNTY	2048	/* New bounty mode by Matt1360 */
 #define GM_NORMAL       0       // You are in normal play mode, no multiplayer stuff
-#define GM_MULTI        38      // You are in some type of multiplayer game
+#define GM_MULTI        36      // You are in some type of multiplayer game
 
+#define GM_SCORED	2	// rangers
 
 #define NDL 5       // Number of difficulty levels.
 

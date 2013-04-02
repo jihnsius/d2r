@@ -5,17 +5,16 @@
 #include <ctype.h>
 
 
-// jinx
+
 #include "instagib.h"
 #include "ctfc.h"
 #include "spec.h"
 #include "d1.h"
 #include "jinx.h"
 #include "promod.h"
+#include "rangers.h"
 
 #include "gamefont.h"
-// jinx
-
 #include "u_mem.h"
 #include "strutil.h"
 #include "game.h"
@@ -81,49 +80,45 @@ void multi_make_player_spec()
 	int type;
 	object *obj;
 	obj = &Objects[Players[Player_num].objnum];
-	if ((obj->type != OBJ_PLAYER) && (obj->type != OBJ_SPECTATOR) && (obj->type != OBJ_GHOST)) return;
+	if ((obj->type != OBJ_PLAYER) && (obj->type != OBJ_CAMERA) && (obj->type != OBJ_GHOST) && (obj->type != OBJ_CAMERA)) return;
 	
 	in_free = 1;
 	piggy_num = 0;
 	
-	if (!(Players[Player_num].spec_flags & PLAYER_FLAGS_SPECTATING) && (spec_trigger == 0))
+	if (!(Players[Player_num].spec_flags & PLAYER_FLAGS_SPECTATING))
 	{
-		obj->type = OBJ_SPECTATOR;
+		obj->type = OBJ_CAMERA;
 		obj->render_type = RT_NONE;
 		obj->control_type	= CT_FLYING;
 		obj->movement_type	= MT_PHYSICS;
 		multi_reset_player_object(obj);
 		Players[Player_num].spec_flags |= PLAYER_FLAGS_SPECTATING;
 		multi_send_position(Players[Player_num].objnum);
-		//multi_powcap_cap_objects();
 		drop_player_eggs(ConsoleObject);
 		multi_send_player_explode(MULTI_PLAYER_DROP);
 		reset_stats_spec();
-		spec_trigger = 1;
 		in_free = 1;
 		piggy_num = Player_num;
 		HUD_init_message(HM_MULTI, "You are now spectating", Players[Player_num].callsign);
+		Players[Player_num].ready = 1;
+		do_resume();
+		type = 1;
 	}
-	if ((Players[Player_num].spec_flags & PLAYER_FLAGS_SPECTATING) && (spec_trigger == 0))
+	else if ((Players[Player_num].spec_flags & PLAYER_FLAGS_SPECTATING))
 	{
 		obj->type = OBJ_PLAYER;
 		obj->render_type = RT_POLYOBJ;
 		obj->control_type	= CT_FLYING;
 		obj->movement_type	= MT_PHYSICS;
-		//multi_reset_player_object(obj);
 		Players[Player_num].spec_flags &= ~PLAYER_FLAGS_SPECTATING;
 		send_i_am_no_longer_spectating_you(piggy_num);
-		spec_trigger = 1;
 		HUD_init_message(HM_MULTI, "You are no longer spectating", Players[Player_num].callsign);
+		timeout_frame();
+		type = 0;
 	}
-	
-	spec_trigger = 0;
 	
 	if (Game_mode & GM_MULTI_ROBOTS)
 			multi_strip_robots(Player_num);
-	
-	if (Players[Player_num].spec_flags & PLAYER_FLAGS_SPECTATING) type = 1;
-	if (!(Players[Player_num].spec_flags & PLAYER_FLAGS_SPECTATING)) type = 0;
 	
 	kill_all_objects_linked_to_player();
 	spec_kill_movement();
@@ -138,7 +133,6 @@ void multi_send_spec_status (int type)
 	multibuf[2]=type;
 	
 	multi_send_data(multibuf, 3, 2);
-	if (testing) multi_do_spec_status(multibuf);
 }
 
 void multi_do_spec_status (char * buf)
@@ -150,19 +144,21 @@ void multi_do_spec_status (char * buf)
 	
 	obj = &Objects[Players[pnum].objnum];
 	
-	if ((obj->type != OBJ_SPECTATOR) && (obj->type != OBJ_PLAYER) && (obj->type != OBJ_GHOST))
+	if ((obj->type != OBJ_CAMERA) && (obj->type != OBJ_PLAYER) && (obj->type != OBJ_GHOST) && (obj->type != OBJ_CAMERA))
 	{
-		HUD_init_message(HM_CONSOLE, "multi_do_spec_status() passed an illegal object #%d", pnum);
+		HUD_init_message(HM_CONSOLE, "multi_do_spec_status() passed an illegal object #%d", Objects[Players[pnum].objnum]);
 		return;
 	}
 	
 	if (type == 1)
 	{
-		obj->type = OBJ_SPECTATOR;
+		obj->type = OBJ_CAMERA;
 		obj->render_type = RT_NONE;
 		multi_reset_player_object(obj);
 		Players[pnum].spec_flags |= PLAYER_FLAGS_SPECTATING;
 		HUD_init_message(HM_MULTI, "%s is now spectating", Players[pnum].callsign);
+		Players[pnum].ready = 1;
+		check_for_all_players_ready();
 	}
 	if (type == 0)
 	{
@@ -171,6 +167,8 @@ void multi_do_spec_status (char * buf)
 		multi_reset_player_object(obj);
 		Players[pnum].spec_flags &= ~PLAYER_FLAGS_SPECTATING;
 		HUD_init_message(HM_MULTI, "%s is no longer spectating", Players[pnum].callsign);
+		Players[pnum].ready = 0;
+		send_timeout();
 	}
 		
 	if (Game_mode & GM_MULTI_ROBOTS)
@@ -219,40 +217,41 @@ void reset_stats_spec()
 
 void send_i_am_spectating_you(int pnum)
 {
+	if (!display_spec_text) return;
 	multibuf[0]=DO_I_AM_SPECTATING_YOU;
 	multibuf[1]=Player_num;
 	multibuf[2]=pnum;
 	multi_send_data(multibuf, 3, 1);
-	if (testing) do_i_am_spectating_you(multibuf);
 }
 
 void do_i_am_spectating_you(char * buf)
 {
+	if (!display_spec_text) return;
 	int pnum = buf[2];
 	if (pnum != Player_num) return;
 	int spec_num = buf[1];
 
 	object *obj;
 	obj = &Objects[Players[spec_num].objnum];
-	obj->type = OBJ_SPECTATOR;
+	obj->type = OBJ_GHOST;
 	obj->render_type = RT_NONE;
 	Players[spec_num].spec_flags |= PLAYER_FLAGS_SPECTATING_ME;
 	Players[spec_num].spec_flags |= PLAYER_FLAGS_SPECTATING;
 	HUD_init_message(HM_MULTI, "%s is now spectating you", Players[spec_num].callsign);
-	
 }
 
 void send_i_am_no_longer_spectating_you(int pnum)
 {
+	if (!display_spec_text) return;
 	multibuf[0]=DO_I_AM_NO_LONGER_SPECTATING_YOU;
 	multibuf[1]=Player_num;
 	multibuf[2]=pnum;
 	multi_send_data(multibuf, 3, 1);
-	if (testing) do_i_am_no_longer_spectating_you(multibuf);
 }
 
 void do_i_am_no_longer_spectating_you(char * buf)
 {
+	if (!display_spec_text) return;
 	int pnum = buf[2];
 	if (pnum != Player_num) return;
 	int spec_num = buf[1];
@@ -270,34 +269,10 @@ void make_all_spectators_invisible()
 			object * obj;
 			obj = &Objects[Players[i].objnum];
 	
-			obj->type = OBJ_SPECTATOR;
+			obj->type = OBJ_GHOST;
 			obj->render_type = RT_NONE;
 		}
 	}	
-*/
-}
-
-void make_piggy_invisible(int piggy_num)
-{
-/*
-	object * obj;
-	obj = &Objects[Players[piggy_num].objnum];
-	
-	obj->type = OBJ_SPECTATOR;
-	obj->render_type = RT_NONE;
-*/
-}
-
-void make_last_piggy_visible(int piggy_num)
-{
-/*
-	if (Players[piggy_num].spec_flags & PLAYER_FLAGS_SPECTATING) return;
-	object * obj;
-	obj = &Objects[Players[piggy_num].objnum];
-	if (obj->type == OBJ_GHOST) return;
-	
-	obj->type = OBJ_PLAYER;
-	obj->render_type = RT_POLYOBJ;
 */
 }
 
@@ -307,7 +282,6 @@ void switch_between_piggy_and_free()
 	if ((in_free == 0) && (piggy_and_free_switch == 0))
 	{
 		in_free = 1;
-		make_last_piggy_visible(piggy_num);
 		send_i_am_no_longer_spectating_you(piggy_num);
 	}
 	else if ((in_free == 1) && (piggy_and_free_switch == 0))
@@ -322,27 +296,22 @@ void switch_between_piggy_and_free()
 
 void switch_between_piggies()
 {
-	if (in_free == 1) return;
-	//last_piggy_num = piggy_num;
-//	piggy_num++;
-
+	if (in_free) return;
+/*
 	for (int i = last_piggy_num + 1; i <= Highest_object_index; i++)
-		if (Objects[i].type == OBJ_ROBOT)
+		if (Objects[i].type == OBJ_PLAYER)
 		{
 			piggy_num = i;
 			break;
 		}
-
+*/
+		piggy_num++;
 		last_piggy_num = piggy_num;
 		in_free = 0;
 		send_i_am_no_longer_spectating_you(last_piggy_num);
-		make_last_piggy_visible(last_piggy_num);
-		send_i_am_spectating_you(piggy_num);
-		make_piggy_invisible(piggy_num);
+		send_i_am_spectating_you(piggy_num);		
 		
-		
-		HUD_init_message(HM_MULTI, "now spectating %s", Players[piggy_num].callsign);
-
+	HUD_init_message(HM_MULTI, "now spectating %s", Players[piggy_num].callsign);
 
 	game_flush_inputs();
 	kill_all_objects_linked_to_player();
@@ -351,7 +320,7 @@ void switch_between_piggies()
 void render_spec_status()
 {
 	if (!(Players[Player_num].spec_flags & PLAYER_FLAGS_SPECTATING)) return;
-	if (display_spec_text == 0) return;
+	if (!display_spec_text) return;
 	
 	gr_set_curfont(GAME_FONT);
 	gr_set_fontcolor(BM_XRGB(0,63,0),-1);
@@ -363,10 +332,14 @@ void render_spec_status()
 
 void make_spectator_ghost_follow_piggy(int pnum)
 {
-
+/*	
 	Objects[Players[Player_num].objnum].pos =  Objects[Players[piggy_num].objnum].pos;
 	Objects[Players[Player_num].objnum].orient =  Objects[Players[piggy_num].objnum].orient;
 	Objects[Players[Player_num].objnum].segnum =  Objects[Players[piggy_num].objnum].segnum;
+*/
+	Objects[Players[Player_num].objnum].pos =  Objects[piggy_num].pos;
+	Objects[Players[Player_num].objnum].orient =  Objects[piggy_num].orient;
+	Objects[Players[Player_num].objnum].segnum =  Objects[piggy_num].segnum;
 }
 
 void spec_kill_movement()
@@ -397,14 +370,12 @@ void do_spectator_frame()
 	if ((!in_free) && !(Players[Player_num].spec_flags & PLAYER_FLAGS_SPECTATING))	
 	{
 		make_spectator_ghost_follow_piggy(piggy_num);			
-		make_piggy_invisible(piggy_num);
 	}
 	make_all_spectators_invisible();
 }
 
 void kill_all_objects_linked_to_player()
 {
-/*
 	for (int i=0;i<=Highest_object_index;i++)
 	{
 		object * linked;
@@ -415,7 +386,6 @@ void kill_all_objects_linked_to_player()
 			multi_send_remobj(linked-Objects);
 		}
 	}
-*/
 }
 
 void init_all_spectator_stuff()
@@ -430,7 +400,7 @@ void multi_do_spec_flags (char *buf)
 
 	spec_flags = GET_INTEL_INT(buf + 2);
 	if (pnum!=Player_num)
-		Players[(int)pnum].spec_flags=spec_flags;
+		Players[(int)pnum].spec_flags = spec_flags;
 }
 
 void multi_send_spec_flags (char pnum)

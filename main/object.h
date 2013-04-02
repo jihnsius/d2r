@@ -56,7 +56,6 @@ enum object_type_t
 	OBJ_LIGHT	= 13,  // a light source, & not much else
 	OBJ_COOP	= 14,  // a cooperative player object.
 	OBJ_MARKER	= 15,  // a map marker
-	OBJ_SPECTATOR = 16,	// jinx 01-25-13 spec
 };
 
 // WARNING!! If you add a type here, add its name to Object_type_names

@@ -66,6 +66,7 @@ fix64 MEGA_GRAVITY = 6000000;
 
 void do_gravity(object * obj)
 {
+	return;
 	physics_info *pi;
 	pi = &obj->mtype.phys_info;
 	int fall_speed;
@@ -84,11 +85,10 @@ void do_gravity(object * obj)
 			fall_speed = MEGA_GRAVITY;
 	}
 	
-	pi->velocity.y += 50;
+	//pi->velocity.y += 50;
 	//pi->velocity.y *= fixmul(fall_speed, FrameTime/2);
 	//pi->velocity.y -= fixmul(fall_speed, FrameTime/2);
 	//HUD_init_message(HM_DEFAULT, "type: %d id: %d", obj->type, obj->id);	
-	HUD_init_message(HM_DEFAULT, "%d", pi->velocity.y);	
 }
 
 //make sure matrix is orthogonal
@@ -341,7 +341,7 @@ void fix_illegal_wall_intersection(object *obj, vms_vector *origin)
 {
 	int hseg = -1, hside = -1, hface = -1;
 
-	if (!(obj->type == OBJ_PLAYER || obj->type == OBJ_ROBOT || obj->type == OBJ_SPECTATOR))	// jinx 02-01-13 spec
+	if (!(obj->type == OBJ_PLAYER || obj->type == OBJ_ROBOT || obj->type == OBJ_CAMERA))	// jinx 02-01-13 spec
 		return;
 
 	if ( object_intersects_wall_d(obj,&hseg,&hside,&hface) )
