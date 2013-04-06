@@ -1,6 +1,7 @@
 
 
 #include "rangers.h"
+#include "rangers3.h"
 #include "hudmsg.h"
 #include "multi.h"
 #include "game.h"
@@ -8,6 +9,7 @@
 
 void send_timeout()
 {
+	Netgame.scored_game = 1;
 	if (!Netgame.scored_game && !Netgame.ranked_game) return;
 	if (Players[Player_num].spec_flags & PLAYER_FLAGS_SPECTATING) return;
 	multibuf[0] = DO_TIMEOUT;

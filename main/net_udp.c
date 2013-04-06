@@ -1211,7 +1211,7 @@ net_udp_can_join_netgame(netgame_info *game)
 	}
 	
 	// Search to see if we were already in this closed netgame in progress
-
+ 
 	for (i = 0; i < num_players; i++) {
 		if ( (!d_stricmp(Players[Player_num].callsign, game->players[i].callsign)) && game->players[i].protocol.udp.isyou )
 			break;

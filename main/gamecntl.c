@@ -476,7 +476,7 @@ int do_game_pause()
 {
 	char *msg;
 	char total_time[9],level_time[9];
-
+ 
 #ifdef NETWORK
 	if (Game_mode & GM_MULTI)
 	{

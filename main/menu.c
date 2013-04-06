@@ -21,6 +21,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include <string.h>
 
 #include "rangers.h"
+#include "ctfc.h"
 
 #include "menu.h"
 #include "inferno.h"
@@ -401,8 +402,19 @@ int RegisterPlayer()
 	return 1;
 }
 
+char account_name_attempt[ACCOUNT_NAME_LEN+1];
+char account_password_attempt[ACCOUNT_PASSWORD_LEN+1];
+
+void account_info_menu()
+{
+
+}
+
 int account_login_verified()
 {
+	strcpy(Players[Player_num].account_name,account_name_attempt);
+	strcpy(Players[Player_num].account_password,account_password_attempt);
+
 	char name1[ACCOUNT_NAME_LEN] = "jinx";
 	if (!strcmp(name1,Players[Player_num].account_name))
 		if (!strcmp(name1,Players[Player_num].account_password))
@@ -411,7 +423,7 @@ int account_login_verified()
 	return 0;
 }
 
-void account_login()	// rangers
+int account_login()	// rangers
 {
 	try_again:
 	if (account_login_name(1))
@@ -427,34 +439,106 @@ void account_login()	// rangers
 			{
 				HUD_init_message(HM_CONSOLE, "signing into account %s", Players[Player_num].account_name);
 				if (account_fetch_details())
+				{
 					HUD_init_message(HM_CONSOLE, "server: signed in as %s", Players[Player_num].account_name);
-				return;
+					return 1;
+				}
 			}
 		}
 	}
 	HUD_init_message(HM_CONSOLE, "an error has occured while signing in");
+	return 0;
 }
 
-void account_logout()
+int account_logout()
 {
 	HUD_init_message(HM_CONSOLE, "server: signing out");
 	strcpy(Players[Player_num].account_name,"");
 	strcpy(Players[Player_num].account_password,"");
 	HUD_init_message(HM_CONSOLE, "successfully signed out", Players[Player_num].account_name);
+	return 1;
+}
+
+int account_menuset(newmenu *menu, d_event *event, void *userdata)
+{
+	switch (event->type)
+	{
+		case EVENT_NEWMENU_CHANGED:
+			break;
+
+		case EVENT_NEWMENU_SELECTED:
+			switch(newmenu_get_citem(menu))
+			{
+				case  0: 
+					account_login_logout();
+					break;
+				case  2: break;
+				case  4: break;
+				case  5: break;
+				case  7: break;
+				case  8: break;
+				case  9: break;
+			}
+			return 1;	// stay in menu until escape
+			break;
+
+		case EVENT_WINDOW_CLOSE:
+		{
+			newmenu_item *items = newmenu_get_items(menu);
+			d_free(items);
+			write_player_file();
+			break;
+		}
+
+		default:
+			break;
+	}
+
+	userdata = userdata;		//kill warning
+
+	return 0;
 }
 
 void do_account()
+{
+
+	if (!d_stricmp(Players[Player_num].account_name,""))
+		if (!account_login_logout()) return;
+		
+	newmenu_item *m;
+
+	MALLOC(m, newmenu_item, 10);
+	if (!m)
+		return;
+
+	m[ 0].type = NM_TYPE_MENU;   
+	m[ 0].text=(!d_stricmp(Players[Player_num].account_name,""))?"login":"logout";
+	//(!d_stricmp(Players[Player_num].account_name,"")?m[ 0].text="login":m[ 0].text="logout";)
+	m[ 1].type = NM_TYPE_TEXT;   m[ 1].text="";
+	m[ 2].type = NM_TYPE_MENU;   m[ 2].text=TXT_CONTROLS_;
+	m[ 3].type = NM_TYPE_TEXT;   m[ 3].text="";
+	m[ 4].type = NM_TYPE_MENU;   m[ 4].text="Screen resolution...";
+	m[ 5].type = NM_TYPE_MENU;   m[ 5].text="Graphics Options...";
+	m[ 6].type = NM_TYPE_TEXT;   m[ 6].text="";
+	m[ 7].type = NM_TYPE_MENU;   m[ 7].text="Primary autoselect ordering...";
+	m[ 8].type = NM_TYPE_MENU;   m[ 8].text="Secondary autoselect ordering...";
+	m[ 9].type = NM_TYPE_MENU;   m[ 9].text="Misc Options...";
+
+	// Fall back to main event loop
+	// Allows clean closing and re-opening when resolution changes
+	newmenu_do3( NULL, TXT_OPTIONS, 10, m, account_menuset, NULL, 0, NULL );
+}
+
+int account_login_logout()
 {
 	if (!d_stricmp(Players[Player_num].account_name,""))
 	{
 		strcpy(Players[Player_num].account_name,"");
 		strcpy(Players[Player_num].account_password,"");
-		account_login();
+		return account_login();
 	}
 	else
-	{
-		account_logout();
-	}
+		return account_logout();
 }
 
 int account_fetch_details()
@@ -499,7 +583,7 @@ int account_login_name(int allow_abort)	// rangers
 	gr_set_fontcolor(BM_XRGB(6,6,6),-1);
 	gr_printf(0x8000,SHEIGHT-LINE_SPACING,TXT_COPYRIGHT);
 	
-	strncpy(text, Players[Player_num].account_name,ACCOUNT_NAME_LEN);
+	strncpy(text, account_name_attempt,ACCOUNT_NAME_LEN);
 
 	m.type=NM_TYPE_INPUT; m.text_len = ACCOUNT_NAME_LEN; m.text = text;
 
@@ -511,7 +595,9 @@ int account_login_name(int allow_abort)	// rangers
 		if ( allow_abort ) 
 		{
 			strcpy(Players[Player_num].account_name,"");
+			strcpy(account_name_attempt,"");
 			strcpy(Players[Player_num].account_password,"");
+			strcpy(account_password_attempt,"");
 			return 0;
 		}
 	}
@@ -521,8 +607,8 @@ int account_login_name(int allow_abort)	// rangers
 
 	d_strlwr(text);
 
-	strncpy(Players[Player_num].account_name, text, ACCOUNT_NAME_LEN);
-	d_strlwr(Players[Player_num].account_name);
+	strncpy(account_name_attempt, text, ACCOUNT_NAME_LEN);
+	d_strlwr(account_name_attempt);
 	
 	return 1;
 }
@@ -533,7 +619,7 @@ int account_login_password(int allow_abort)	// rangers
 	newmenu_item m;
 	char text[ACCOUNT_NAME_LEN+9]="";
 	
-	strncpy(text, Players[Player_num].account_password,ACCOUNT_PASSWORD_LEN);
+	strncpy(text, account_password_attempt, ACCOUNT_PASSWORD_LEN);
 
 	m.type=NM_TYPE_INPUT; m.text_len = ACCOUNT_PASSWORD_LEN; m.text = text;
 
@@ -548,15 +634,17 @@ int account_login_password(int allow_abort)	// rangers
 		if ( allow_abort ) 
 		{
 			strcpy(Players[Player_num].account_name,"");
+			strcpy(account_name_attempt,"");
 			strcpy(Players[Player_num].account_password,"");
+			strcpy(account_password_attempt,"");
 			return 0;
 		}
 	}
 
 	d_strlwr(text);
 
-	strncpy(Players[Player_num].account_password, text, ACCOUNT_PASSWORD_LEN);
-	d_strlwr(Players[Player_num].account_password);
+	strncpy(account_password_attempt, text, ACCOUNT_PASSWORD_LEN);
+	d_strlwr(account_password_attempt);
 	
 	return 1;
 }
@@ -569,7 +657,18 @@ void draw_copyright()
 	gr_set_fontcolor(BM_XRGB(6,6,6),-1);
 	gr_printf(0x8000,SHEIGHT-LINE_SPACING,TXT_COPYRIGHT);
 	gr_set_fontcolor( BM_XRGB(0,0,25), -1);
-	gr_printf(0x8000,SHEIGHT-(LINE_SPACING*2),"d2r v0.01a");
+	gr_printf(0x8000,SHEIGHT-(LINE_SPACING*2),"d2r v0.01a\t                                           ");
+	if (!d_stricmp(Players[Player_num].account_name,""))
+	{
+		gr_set_fontcolor( BM_XRGB(25,0,0), -1);
+		gr_printf(0x8000,SHEIGHT-(LINE_SPACING*2),"\t                                           not signed in");
+		
+	}
+	else
+	{
+		gr_set_fontcolor( BM_XRGB(0,25,0), -1);
+		gr_printf(0x8000,SHEIGHT-(LINE_SPACING*2),"\t                                           signed in as %s", Players[Player_num].account_name);
+	}
 }
 
 //returns the number of demo files on the disk
@@ -656,17 +755,16 @@ int main_menu_handler(newmenu *menu, d_event *event, int *menu_choice )
 void create_main_menu(newmenu_item *m, int *menu_choice, int *callers_num_options)
 {
 	int	num_options;
-
 	#ifndef DEMO_ONLY
 	num_options = 0;
 
-	ADD_ITEM("asdf\tnew game",MENU_NEW_GAME,KEY_N);
-
+	ADD_ITEM("\tnew game",MENU_NEW_GAME,KEY_N);
+	
 	ADD_ITEM("\tload game",MENU_LOAD_GAME,KEY_L);
 #if defined(USE_UDP)
 	ADD_ITEM("\tmultiplayer",MENU_MULTIPLAYER,-1);
 #endif
-	ADD_ITEM("\tlogin/logout",MENU_ACCOUNT,-1);
+	ADD_ITEM("\taccount",MENU_ACCOUNT,-1);
 		
 	ADD_ITEM("\toptions...", MENU_CONFIG, -1 );
 	ADD_ITEM("\tchange pilot",MENU_NEW_PLAYER,unused);
@@ -675,6 +773,7 @@ void create_main_menu(newmenu_item *m, int *menu_choice, int *callers_num_option
 	ADD_ITEM("\tcredits",MENU_SHOW_CREDITS,-1);
 	#endif
 	ADD_ITEM("\tquit",MENU_QUIT,KEY_Q);
+	
 
 	#ifndef RELEASE
 	if (!(Game_mode & GM_MULTI ))	{
@@ -689,7 +788,7 @@ void create_main_menu(newmenu_item *m, int *menu_choice, int *callers_num_option
 	#endif
 	
 	m[num_options].type = NM_TYPE_TEXT; m[num_options++].text = "                                          ";
-	// there's got to be a better way to do this
+	// rangers: there's got to be a better way to do this
 
 	*callers_num_options = num_options;
 }

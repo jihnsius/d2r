@@ -180,7 +180,12 @@ common_sources = [
 'texmap/scanline.c',
 'main/spec.c',
 'main/ctfc.c',
-'main/rangers.c'
+'main/rangers.c',
+'main/sha256.c',
+'main/cJSON.c',
+'main/http_lib.c',
+'main/rangers2.c',
+'main/post.c'
 ]
 
 # for editor
@@ -287,7 +292,7 @@ env.Append(CPPFLAGS = ['-Wall', '-funsigned-char', '-Werror=implicit-int', '-Wer
 env.Append(CPPDEFINES = [('PROGRAM_NAME', '\\"' + str(PROGRAM_NAME) + '\\"'), ('D2XMAJORi', str(D2XMAJOR)), ('D2XMINORi', str(D2XMINOR)), ('D2XMICROi', str(D2XMICRO))])
 env.Append(CPPDEFINES = ['NETWORK', '_REENTRANT'])
 env.Append(CPPPATH = ['include', 'main', 'arch/include'])
-libs = ['physfs', 'm']
+libs = ['physfs', 'm', 'curl']
 
 # Get traditional compiler environment variables
 if os.environ.has_key('CC'):
@@ -431,6 +436,7 @@ if (use_udp == 1):
 print '\n'
 
 env.Append(CPPDEFINES = [('SHAREPATH', '\\"' + str(sharepath) + '\\"')])
+
 # finally building program...
 env.Program(target=str(target), source = common_sources, LIBS = libs, LINKFLAGS = str(lflags))
 if (sys.platform != 'darwin'):

@@ -10,10 +10,10 @@
 int current_time;
 
 //misc
-int force_respawn;
-int is_flag;
+ubyte force_respawn;
+ubyte is_flag;
 int ignore_last_kill_text;
-int first_spawns;
+ubyte first_spawns;
 
 //flag spawns
 int red_flag_spawn;
@@ -34,7 +34,6 @@ void set_flag_home();
 void multi_send_flag_orients();
 void multi_do_flag_orients(char * buf);
 
-void set_flag_home();		// jinx 12-17-12 ctfc
 void multi_send_return_bonus(char pnum);
 void request_flag_spawns();
 void multi_do_autoreturn_red();

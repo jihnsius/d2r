@@ -73,13 +73,9 @@ void multi_do_return_flag(char *buf)
 	int pnum = buf[1];
 	int powerup = buf[2];
 	if (powerup==47)	// if pow_flag_red (not including powerup.h)
-	{
 		maybe_drop_net_powerup (POW_FLAG_RED);
-	}
 	if (powerup==46)	// if pow_flag_blue (not including powerup.h)
-	{
 		maybe_drop_net_powerup (POW_FLAG_BLUE);
-	}
 	multi_send_return_bonus(pnum);
 }
 
@@ -90,13 +86,9 @@ void multi_do_capture_flag(char * buf)
 	int pnum = buf[1];
 	
 	if (get_team(pnum)==TEAM_RED)
-	{
 		maybe_drop_net_powerup (POW_FLAG_BLUE);
-	}
 	if (get_team(pnum)==TEAM_BLUE)
-	{
 		maybe_drop_net_powerup (POW_FLAG_RED);
-	}
 	multi_send_capture_bonus (pnum);
 }
 
@@ -126,13 +118,13 @@ void set_flag_home()
 		{
 			if (Objects[i].id == POW_FLAG_RED) 
 			{
-			red_flag_spawn = Objects[i].segnum;
-			red_flag_pos = Objects[i].pos;
+				red_flag_spawn = Objects[i].segnum;
+				red_flag_pos = Objects[i].pos;
 			}
 			if (Objects[i].id == POW_FLAG_BLUE) 
 			{
-			blue_flag_spawn = Objects[i].segnum;
-			blue_flag_pos = Objects[i].pos;
+				blue_flag_spawn = Objects[i].segnum;
+				blue_flag_pos = Objects[i].pos;
 			}
 		}
 	}

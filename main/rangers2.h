@@ -5,3 +5,4 @@
 #define S_RED			4
 #define ACCOUNT_NAME_LEN 16
 #define ACCOUNT_PASSWORD_LEN 32
+#define ACCESS_TOKEN_LEN 32

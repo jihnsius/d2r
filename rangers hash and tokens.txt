@@ -1,0 +1,322 @@
+[2:29:37 PM] (Channel) Verran@Work: http://sourceforge.net/projects/cjson/
+[2:29:41 PM] (Channel) Verran@Work: may work better
+[2:30:01 PM] To Meeting: will give it a shot, seeing how jansson is being a pain in the ass
+[2:31:09 PM] (Channel) Verran@Work: http://cjson.svn.sourceforge.net/viewvc/cjson/test.c?revision=54&view=markup
+[2:31:23 PM] Blarget2 disconnected.
+[2:31:48 PM] (Channel) Verran@Work: ok here is the schema for game reporting:
+[2:31:51 PM] (Channel) Verran@Work: http://www.descentrangers.com/WebApi/DxxRebirth/v1/GameReport/Test
+[2:32:46 PM] Dravis_Black disconnected.
+[2:32:55 PM] (Channel) Verran@Work: for authorizing a member:
+[2:32:57 PM] (Channel) Verran@Work: http://www.descentrangers.com/WebApi/DxxRebirth/v1/Authentication/Authenticate?hashedAppToken=7ee99601492050b4b095e504f45b60375ea6b211fb7f7efddf4c765cdfa0d0e3&hashedMemberToken=96cae35ce8a9b0244178bf28e4966c2ce1b8385723a96a6b838858cdd6ca0a1e
+[2:34:20 PM] (Channel) Verran@Work: hashedAppToken is a SHA256 hash of this value for Descent 1: 6n2E1ie161fJV3x
+[2:34:29 PM] (Channel) Verran@Work: and this value for Descent 2: t6y27SeRJ7ir525
+[2:35:07 PM] (Channel) Verran@Work: hashedMemberToken is a SHA256 hash value of what the user enters in the game (for authentication)
+[2:35:18 PM] (Channel) Verran@Work: there is a new field on member profiles on the website where they can enter the raw value
+[2:35:28 PM] (Channel) Verran@Work: it's called Rebirth Access Token
+[2:36:39 PM] (Channel) Verran@Work: this can help: http://www.xorbin.com/tools/sha256-hash-calculator
+[2:36:46 PM] To Meeting: SHA1 I assume?
+[2:37:11 PM] (Channel) Verran@Work: SHA256 is a successor to SHA1
+[2:37:22 PM] To Meeting: ah
+[2:37:29 PM] (Channel) Verran@Work: it's a bit harder to break
+[2:37:33 PM] To Meeting: derp
+[2:37:33 PM] To Meeting: cool
+[2:37:55 PM] (Channel) Verran@Work: not as good as SHA512 but 512 hashes are too damn long
+[2:38:07 PM] To Meeting: that how many bytes it is?
+[2:39:11 PM] To Meeting: guess it doesnt matter
+[2:39:20 PM] (Channel) Verran@Work: I believe 256 is 32 and 512 is 64
+[2:39:27 PM] (Channel) Verran@Work: but yeah
+[2:39:57 PM] (Channel) Verran@Work: so with this schema: http://www.descentrangers.com/WebApi/DxxRebirth/v1/GameReport/Test
+[2:40:07 PM] (Channel) Verran@Work: you'd post that data to here:
+[2:40:29 PM] (Channel) Verran@Work: http://www.descentrangers.com/WebApi/DxxRebirth/v1/GameReport/ReportGame
+[2:40:45 PM] (Channel) Verran@Work: it will return the data you'll see if you click on that
+[2:40:46 PM] To Meeting: change it to v01
+[2:40:55 PM] To Meeting: to be consistant with how I already numbered it
+[2:40:59 PM] (Channel) Verran@Work: ok
+[2:41:15 PM] (Channel) Verran@Work: obviously don't post to production yet lol :) I'll setup my test server tonight
+[2:41:19 PM] (Channel) Verran@Work: and send the URLs
+[2:41:29 PM] (Channel) Verran@Work: also there is a really handy tool I want to give you
+[2:41:34 PM] To Meeting: gonna start boosting myself brb
+[2:41:54 PM] (Channel) Verran@Work: https://code.google.com/p/rest-client/
+[2:42:15 PM] (Channel) Verran@Work: this will let you submit the json data (POST) to the URLs to make sure your schemas are right, etc
+[2:42:29 PM] To Meeting: good stuff, was wondering how I'd do that
+[2:42:32 PM] (Channel) Verran@Work: download: https://code.google.com/p/rest-client/downloads/detail?name=restclient-ui-3.1-jar-with-dependencies.jar&can=2&q=
+[2:42:56 PM] (Channel) Verran@Work: also
+[2:43:09 PM] (Channel) Verran@Work: a few things about the game report schema
+[2:43:12 PM] (Channel) Verran@Work: this guy: http://www.descentrangers.com/WebApi/DxxRebirth/v1/GameReport/Test
+[2:43:27 PM] (Channel) Verran@Work: GameTimeInMinutesForCooperative should obisouly be null for non-co-op games
+[2:43:36 PM] To Meeting: yeah
+[2:43:40 PM] (Channel) Verran@Work: and that is also something the user should have to enter, don't take the # from the game
+[2:43:52 PM] To Meeting: k
+[2:43:54 PM] (Channel) Verran@Work: since folks might save + load and resume over time,e tc
+[2:44:11 PM] To Meeting: doesn't save and load use the same time it was saved at?
+[2:44:13 PM] (Channel) Verran@Work: placements: team placements = null for non-team game modes
+[2:44:21 PM] To Meeting: oh, nm, i see what you're saying
+[2:44:36 PM] (Channel) Verran@Work: some guys track the time manually
+[2:44:44 PM] (Channel) Verran@Work: I use a stop watch
+[2:44:56 PM] (Channel) Verran@Work: since we take breaks once and awhike
+[2:45:24 PM] (Channel) Verran@Work: I need to give you the game mode IDs
+[2:45:44 PM] To Meeting: how about I give them to you and you can change yours to what they are in the source and on the tracker?
+[2:46:09 PM] (Channel) Verran@Work: Anarchy = 1,
+CaptureTheFlag = 2,
+Cooperative = 3,
+TeamAnarchy = 4,
+RoboAnarchy = 5,
+Entropy = 6,
+Hoard = 7,
+TeamHoard = 8,
+HyperAnarchy = 9,
+Monsterball = 10,
+Bounty = 11
+[2:46:21 PM] To Meeting: oh yeah, nm, it changes between games
+[2:46:53 PM] (Channel) Verran@Work: ExternalGameId: obviously that in-game ID we talked about
+[2:47:14 PM] (Channel) Verran@Work: it will uses that to prevent creating duplicate game reports
+[2:47:26 PM] (Channel) Verran@Work: if it finds ExternalGameId already, it will update the existing report
+[2:47:43 PM] To Meeting: clever you
+[2:47:55 PM] (Channel) Verran@Work: HashedAppToken is the same as what I described for the authentication piece
+[2:48:15 PM] (Channel) Verran@Work: NumberOfTeams: null of not a team game mode
+[2:48:23 PM] (Channel) Verran@Work: oh
+[2:48:34 PM] (Channel) Verran@Work: and member placements can be anything, prefer 0 for cooperative
+[2:48:45 PM] (Channel) Verran@Work: they are auto set to 0 on my side
+[2:48:53 PM] (Channel) Verran@Work: that's it
+[2:50:35 PM] (Channel) Verran@Work: I'll start on changing v1 to v01 right now
+[2:50:55 PM] To Meeting: k
+[2:51:14 PM] To Meeting: scared to give me your cell number? :b
+[2:51:24 PM] (Channel) Verran@Work: lol
+[2:51:28 PM] (Channel) Verran@Work: 303-506-4568
+[2:51:32 PM] (Channel) Verran@Work: work cell anyway :P
+[2:52:07 PM] To Meeting: gonna run to the store, you be here in 30?
+[2:52:13 PM] (Channel) Verran@Work: yep
+[2:52:26 PM] To Meeting: actually ill do it later
+[2:52:29 PM] To Meeting: tmw right now
+[2:54:16 PM] (Channel) Verran@Work: too much wine?
+[2:54:33 PM] To Meeting: too little wine
+[2:54:45 PM] (Channel) Verran@Work: lol
+[2:56:52 PM] To Meeting: aww, json doesn't do any of the actual data uploading/downloading?
+[2:57:05 PM] (Channel) Verran@Work: no probably not
+[2:57:11 PM] (Channel) Verran@Work: have to find something for http
+[2:57:40 PM] Tylosaurus disconnected.
+[2:57:44 PM] To Meeting: json looks pretty simple so far, pretty straight forward
+[2:58:06 PM] (Channel) Verran@Work: http://curl.haxx.se/libcurl/c/example.html ?
+[2:58:44 PM] (Channel) Verran@Work: http://curl.haxx.se/libcurl/c/postit2.html
+[2:59:21 PM] (Channel) Verran@Work: ok all URLs changed to v01 now
+[2:59:30 PM] (Channel) Verran@Work: going to setup test server at home now as well
+[2:59:37 PM] To Meeting: awesome
+[3:01:35 PM] (Channel) Verran@Work: I'll take a snapshot of our production database right now as well
+[3:11:25 PM] (Channel) Verran@Work: okay we're all set
+[3:11:28 PM] (Channel) Verran@Work: http://beta.descentrangers.com/
+[3:11:45 PM] To Meeting: sandbox mode?
+[3:11:46 PM] (Channel) Verran@Work: I also gave you full admin access when you login to the site, so you can setup users as necessary
+[3:11:52 PM] (Channel) Verran@Work: yes everything is fully isolated
+[3:11:52 PM] To Meeting: sweet
+[3:12:18 PM] (Channel) Verran@Work: oh more more thing I forgot
+[3:14:04 PM] (Channel) Verran@Work: you may have to add this to all of the URLs:
+[3:14:07 PM] (Channel) Verran@Work: ?AspxAutoDetectCookieSupport=1
+[3:14:28 PM] To Meeting: you mean to use the sandbox?
+[3:14:40 PM] (Channel) Verran@Work: both sandbox and production
+[3:14:58 PM] (Channel) Verran@Work: it's stupid microsoft crap
+[3:15:07 PM] To Meeting: kk
+[3:15:56 PM] VaiN connected.
+[3:16:42 PM] (Channel) Verran@Work: so D1 auth:
+[3:16:50 PM] (Channel) Verran@Work: using my Rebirth pwd:
+[3:16:52 PM] (Channel) Verran@Work: http://beta.descentrangers.com/WebApi/DxxRebirth/v01/Authentication/Authenticate?AspxAutoDetectCookieSupport=1&hashedAppToken=356c6ffb44fcd864c5d85ecdbd2d1c1c6851cb217a5d4e2d8934c249c893d3e5&hashedMemberToken=96cae35ce8a9b0244178bf28e4966c2ce1b8385723a96a6b838858cdd6ca0a1e
+[3:16:59 PM] (Channel) Verran@Work: D2:
+[3:17:00 PM] (Channel) Verran@Work: http://beta.descentrangers.com/WebApi/DxxRebirth/v01/Authentication/Authenticate?AspxAutoDetectCookieSupport=1&hashedAppToken=7ee99601492050b4b095e504f45b60375ea6b211fb7f7efddf4c765cdfa0d0e3&hashedMemberToken=96cae35ce8a9b0244178bf28e4966c2ce1b8385723a96a6b838858cdd6ca0a1e
+[3:17:11 PM] (Channel) Verran@Work: get sample game report schema:
+[3:17:12 PM] (Channel) Verran@Work: http://beta.descentrangers.com/WebApi/DxxRebirth/v01/GameReport/Test?AspxAutoDetectCookieSupport=1
+[3:17:23 PM] (Channel) Verran@Work: POST operation for actual game report:
+[3:17:25 PM] (Channel) Verran@Work: http://beta.descentrangers.com/WebApi/DxxRebirth/v01/GameReport/ReportGame?AspxAutoDetectCookieSupport=1
+[3:17:32 PM] (Channel) Verran@Work: should be it
+[3:17:53 PM] To Meeting: added a seperate field to users for in-game password?
+[3:18:03 PM] (Channel) Verran@Work: yeah
+[3:18:05 PM] To Meeting: cool
+[3:18:05 PM] (Channel) Verran@Work: login to the site
+[3:18:08 PM] (Channel) Verran@Work: go to a profile
+[3:18:11 PM] (Channel) Verran@Work: new field
+[3:18:14 PM] (Channel) Verran@Work: Rebirth Access Token
+[3:18:43 PM] (Channel) Verran@Work: the beta web server is running at home
+[3:18:49 PM] To Meeting: this line:
+[3:18:51 PM] To Meeting: "Placements":[{"MemberId":"f4ef9dc6-f878-4470-b1ad-a16800cdfce8","Placement":1,"TeamPlacement":1},{"MemberId":"eab4e824-8ff7-4258-8fb9-a16800ce557e","Placement":2,"TeamPlacement":1},{"MemberId":"fcf76754-0397-431e-9890-a16800cdf551","Placement":3,"TeamPlacement":2},{"MemberId":"4996a5cd-c546-4afd-9f2b-a16800cdfcb7","Placement":4,"TeamPlacement":2}]}
+[3:18:53 PM] (Channel) Verran@Work: so if it slows down you'll know we're watching pr0n or netflix
+[3:19:19 PM] To Meeting: do I need to input up to 8 seperate fields and leave some blank?
+[3:19:26 PM] To Meeting: or only generate those fields for how many players there are?
+[3:19:33 PM] (Channel) Verran@Work: # of members
+[3:19:36 PM] (Channel) Verran@Work: [] = array
+[3:19:36 PM] To Meeting: k
+[3:19:55 PM] To Meeting: oh, yeah, didn't see NumberOfMembers
+[3:19:59 PM] To Meeting: derp
+[3:20:01 PM] (Channel) Verran@Work: [{mem fields}, {mem fields}]
+[3:20:21 PM] (Channel) Verran@Work: yeah that's just there to make my life easier on this side lol
+[3:23:45 PM] VaiN entered channel.
+[3:23:52 PM] (Channel) Verran@Work: nice to see ya
+[3:23:53 PM] (Channel) VaiN: Do I need to be in the same channel to chat?
+[3:23:59 PM] To Meeting: yeah
+[3:24:10 PM] (Channel) Verran@Work: you have to highlight the channels to target them, or be in it to speak (audio)
+[3:24:16 PM] (Channel) Verran@Work: * target them for text chat
+[3:24:22 PM] To Meeting: yeah, if you just click on one channel, you can send text message to them
+[3:24:34 PM] To Meeting: but you won't be able to use voice chat or see/hear what other people say unless you join that channel
+[3:24:40 PM] DKH1 connected.
+[3:25:00 PM] (Channel) Verran@Work: hey jinx you got your stuff on git yet?
+[3:25:06 PM] (Channel) Verran@Work: like github or something?
+[3:25:18 PM] To Meeting: nope not yet
+[3:25:24 PM] (Channel) Verran@Work: ok
+[3:25:26 PM] To Meeting: need to figure out how to auto push to github through gity
+[3:25:28 PM] To Meeting: -y
+[3:25:34 PM] (Channel) Verran@Work: maybe we could set that up soon
+[3:25:47 PM] To Meeting: if you want to try to set up an account it'll be less work for me
+[3:25:51 PM] (Channel) VaiN: Aight cool. I just got myself a new computer, an iMac. You guys know if deescent runs on mac?
+[3:25:56 PM] To Meeting: it does
+[3:25:59 PM] To Meeting: www.dxx-rebirth.com
+[3:26:06 PM] (Channel) VaiN: I do have parallels installed so I guess I could just run it through there
+[3:26:19 PM] (Channel) VaiN: cool, I'll check it out one of these days
+[3:26:29 PM] To Meeting: You need the original game content to play, that's just the binary
+[3:26:31 PM] (Channel) Verran@Work: bitbucket.org is free up to 5 users and has git support
+[3:26:46 PM] To Meeting: I don't foresee us passing 5 devs any time soon
+[3:26:56 PM] (Channel) Verran@Work: yeah
+[3:27:03 PM] (Channel) VaiN: Ya, still got my old files on my old PC
+[3:27:05 PM] (Channel) Verran@Work: got the Ranger site up there and just me and Sirius
+[3:27:17 PM] (Channel) Verran@Work: but we're using mercurial
+[3:27:41 PM] To Meeting: yeah, I have no desire to learn mercurial right now
+[3:27:51 PM] To Meeting: I hear it's better than svn, but that's not saying much
+[3:27:59 PM] (Channel) Verran@Work: mercurial is like git
+[3:28:12 PM] (Channel) Verran@Work: just dumbed down to make it easier to manage
+[3:28:28 PM] (Channel) Verran@Work: but I want to learn git so I have no preference
+[3:28:51 PM] To Meeting: took me not even 10 minutes to learn all the basics
+[3:28:54 PM] To Meeting: pretty straight forward
+[3:30:03 PM] Tylosaurus connected.
+[3:30:11 PM] (Channel) Verran@Work: http://blogs.atlassian.com/2012/02/mercurial-vs-git-why-mercurial/?utm_source=wac-dvcs&utm_medium=text&utm_content=dvcs-options-git-or-mercurial
+[3:30:15 PM] (Channel) Verran@Work: http://blogs.atlassian.com/2012/03/git-vs-mercurial-why-git/?utm_source=wac-dvcs&utm_medium=text&utm_content=dvcs-options-git-or-mercurial
+[3:30:50 PM] Tylosaurus entered channel.
+[3:31:47 PM] (Channel) Verran@Work: we mainly picked mercurial here at work for the safer history, but also it hosts under windows easily
+[3:31:59 PM] (Channel) Verran@Work: the infrastructure guys where don't know linux
+[3:32:21 PM] (Channel) Tylosaurus: IS this the same VaiN? http://descentrangers.com/MemberProfile?memberId=f02c5868-e45b-4dc8-b095-a16800cdfdd1
+[3:32:22 PM] (Channel) Tylosaurus: xD
+[3:33:12 PM] To Meeting: so we start at 1 when counting up, not 0?
+[3:33:15 PM] To Meeting: 1 player means 1 player?
+[3:33:48 PM] (Channel) Verran@Work: placement?
+[3:34:07 PM] To Meeting: game mode, placement
+[3:34:09 PM] (Channel) Verran@Work: placement starts at 1 i.e. 1st place
+[3:34:11 PM] (Channel) Verran@Work: oh
+[3:34:11 PM] To Meeting: anything that uses an integer
+[3:34:17 PM] (Channel) Verran@Work: game mode starts at 1
+[3:34:29 PM] Muted and deafened.
+[3:34:38 PM] Tylosaurus moved to Building or Coding or Mapping.
+[3:34:55 PM] (Channel) Verran@Work: placement can be null or 0 for co-op
+[3:35:23 PM] To Meeting: so 0 team placement if it's not team
+[3:35:27 PM] To Meeting: 0 player placement if coop
+[3:35:38 PM] To Meeting: everything, if not applicable to the gametype, set to 0
+[3:35:44 PM] (Channel) Verran@Work: null team placement if not team
+[3:36:01 PM] To Meeting: but not 0?
+[3:36:38 PM] To Meeting: need to look into that, see how json deals with null
+[3:36:41 PM] (Channel) Verran@Work: umm I'm not sure if I'm handling 0 values over here (force to null)
+[3:37:04 PM] (Channel) Verran@Work: I believe it's just "field":null
+[3:37:07 PM] To Meeting: so null will work for every field it would apply to?
+[3:37:13 PM] (Channel) Verran@Work: yes
+[3:38:07 PM] (Channel) Verran@Work: so those would be GameTimeInMinutesForCooperative, NumberOfTeams, Placement and TeamPlacement
+[3:38:20 PM] VaiN moved to Waiting for Games.
+[3:38:29 PM] To Meeting: k
+[3:38:57 PM] (Channel) Verran@Work: what browser do you use?
+[3:39:11 PM] To Meeting: chrome
+[3:39:15 PM] (Channel) Verran@Work: ok
+[3:39:21 PM] (Channel) Verran@Work: the JSONView extension is super helpful
+[3:39:25 PM] To Meeting: link
+[3:39:31 PM] (Channel) Verran@Work: it will make it look pretty
+[3:39:32 PM] (Channel) Verran@Work: ok 1 sec
+[3:39:46 PM] (Channel) Verran@Work: https://chrome.google.com/webstore/detail/jsonview/chklaanhfefbnpoihckbnefhakgolnmc
+[3:43:00 PM] (Channel) Verran@Work: brb must piss like a race horse
+[3:45:18 PM] _Icewolf_ disconnected.
+[3:45:30 PM] IceWolf connected.
+[3:49:12 PM] To Meeting: having trouble figuring out how to make an array that won't return the array's name with it for the placements
+[3:49:59 PM] VaiN disconnected.
+[3:50:39 PM] Jonathan connected.
+[3:55:18 PM] Pigmy_Black disconnected.
+[3:55:34 PM] Blarget2 connected.
+[3:55:34 PM] Blarget2 moved in from Descent Rangers by the server.
+[3:55:37 PM] Blarget2 moved to Waiting for Games.
+[3:56:01 PM] Blarget2 disconnected.
+[4:00:08 PM] Jonathan disconnected.
+[4:01:42 PM] (Channel) Verran@Work: I'm back
+[4:02:27 PM] (Channel) Verran@Work: the array's name?
+[4:02:45 PM] To Meeting: theres the root array Placements
+[4:02:51 PM] To Meeting: then theres multiple arrays within that
+[4:03:01 PM] To Meeting: but the arrays inside Placements don't have names
+[4:03:03 PM] To Meeting: just data
+[4:03:41 PM] (Channel) Verran@Work: no those aren't arrays
+[4:04:28 PM] (Channel) Verran@Work: lemme lookup the right terminology
+[4:04:32 PM] To Meeting: objects?
+[4:04:35 PM] To Meeting: structs?
+[4:04:35 PM] (Channel) Verran@Work: ya
+[4:04:46 PM] To Meeting: same difference =b
+[4:05:07 PM] (Channel) Verran@Work: http://www.json.org/
+[4:05:16 PM] (Channel) Verran@Work: An object is an unordered set of name/value pairs. An object begins with { (left brace) and ends with } (right brace).
+[4:05:24 PM] To Meeting: k
+[4:05:32 PM] (Channel) Verran@Work: Each name is followed by : (colon) and the name/value pairs are separated by , (comma).
+[4:05:32 PM] To Meeting: so I need to make objects, not arrays
+[4:05:37 PM] Tylosaurus entered channel.
+[4:05:46 PM] Tylosaurus moved to Away or Idle.
+[4:05:47 PM] (Channel) Verran@Work: ya assign objects to that placements array
+[4:05:52 PM] Tylosaurus disconnected.
+[4:06:06 PM] IceWolf disconnected.
+[4:06:30 PM] (Channel) Verran@Work: still trying Jansson? or is cJSON working out?
+[4:06:34 PM] To Meeting: cjson is beautiful
+[4:06:38 PM] (Channel) Verran@Work: ok awesome
+[4:06:39 PM] To Meeting: jansson required tons of bullshit to be set up
+[4:06:45 PM] (Channel) Verran@Work: yeah it looked like it
+[4:06:50 PM] To Meeting: cjson is just a header and a module
+[4:07:07 PM] To Meeting: might be losing overall functionality, but hey, if it works, it works
+[4:07:23 PM] (Channel) Verran@Work: simple is better
+[4:07:57 PM] (Channel) Verran@Work: unless it involves hot women and lingurie, then I am fine with complex
+[4:09:00 PM] To Meeting: tmw
+[4:09:19 PM] To Meeting: women require you to pay attention to them
+[4:09:32 PM] To Meeting: they're like puppies
+[4:09:54 PM] (Channel) Verran@Work: lol
+[4:21:27 PM] To Meeting: almost got the data parsing done
+[4:21:53 PM] To Meeting: I looked at rest client and it looks like it's nothing but class files
+[4:22:12 PM] (Channel) Verran@Work: awesome
+[4:22:24 PM] (Channel) Verran@Work: it should open if you have java installed
+[4:22:35 PM] (Channel) Verran@Work: I just posted a game through it to test it and make sure it's working
+[4:22:37 PM] (Channel) Verran@Work: http://beta.descentrangers.com/MemberGameStatistics/AwaitingValidation
+[4:22:59 PM] To Meeting: which file did you use?
+[4:23:17 PM] To Meeting: no readme
+[4:23:30 PM] (Channel) Verran@Work: I just double clicked on the JAR file
+[4:23:40 PM] To Meeting: ah, okay
+[4:23:43 PM] To Meeting: I extracted it
+[4:24:23 PM] (Channel) Verran@Work: ahhh yeah nope don't wanna do that
+[4:24:38 PM] (Channel) Verran@Work: http://windowstipoftheday.blogspot.com/2005/10/setting-jar-file-association.html
+[4:24:41 PM] (Channel) Verran@Work: if that helps
+[4:24:53 PM] Hawkins connected.
+[4:25:08 PM] (Channel) Verran@Work: or http://johann.loefflmann.net/en/software/jarfix/index.html
+[4:27:17 PM] (Channel) Verran@Work: if u get it running
+[4:27:22 PM] (Channel) Verran@Work: set the body content type to application/json; charset=UTF-8
+[4:27:39 PM] (Channel) Verran@Work: http method = post
+[4:28:30 PM] To Meeting: yep, cool, it opened
+[4:28:34 PM] To Meeting: will mess with that later
+[4:28:40 PM] (Channel) Verran@Work: awesome
+[4:32:30 PM] (Channel) Verran@Work: sweet, co-op game worked, too
+[4:32:31 PM] (Channel) Verran@Work: http://beta.descentrangers.com/MemberGameStatistics/AwaitingValidation
+[4:33:03 PM] (Channel) Verran@Work: oh, also, Icewolf mentioned something that sounded like a good idea
+[4:33:14 PM] (Channel) Verran@Work: writing the game info to a log in case something happens with our crap not working
+[4:33:22 PM] To Meeting: ofc
+[4:33:38 PM] (Channel) Verran@Work: lol
+[4:33:40 PM] To Meeting: it'll dump all the info in the console and to a log for every game
+[4:33:50 PM] (Channel) Verran@Work: cool
+[4:37:43 PM] Gengi connected.
+[4:40:21 PM] (Channel) Verran@Work: oh you got something for sha256?
+[4:40:27 PM] To Meeting: not yet
+[4:40:39 PM] (Channel) Verran@Work: ok
+[4:40:47 PM] (Channel) Verran@Work: this looks straight forward and portable: http://freecode.com/projects/sha2
+[4:45:44 PM] (Channel) Verran@Work: altho their test code is annoying since they're reading the data to hash out of files lol
+[4:46:18 PM] To Meeting: always wanted to learn how hashing works
+[4:46:22 PM] To Meeting: guess it's time
+[4:50:03 PM] (Channel) Verran@Work: http://www.youtube.com/watch?v=GbyI1MturaM
+[4:50:50 PM] To Meeting: haha awesome
+[4:52:20 PM] (Channel) Verran@Work: ffffaaaart rainbows
+[4:52:42 PM] (Channel) Verran@Work: I love the expression on it's face while firing
+[4:52:53 PM] To Meeting: its a little disturbing
+[4:53:04 PM] (Channel) Verran@Work: is there an alt fire?
+[4:53:18 PM] (Channel) Verran@Work: :)
+[4:55:41 PM] (Channel) Verran@Work: gonna head home
+[4:55:44 PM] (Channel) Verran@Work: won't be on
+[4:55:47 PM] To Meeting: k
+[4:55:47 PM] (Channel) Verran@Work: showings tonight
+[4:55:49 PM] To Meeting: have fun
+[4:55:51 PM] (Channel) Verran@Work: cya

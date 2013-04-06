@@ -33,6 +33,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "promod.h"
 
 #include "gamefont.h"
+#include "rangers3.h"
 // jinx
 
 #include "u_mem.h"
@@ -1566,6 +1567,15 @@ void multi_send_message_end()
 	else if (!d_strnicmp (Network_message,"/list",5) && (Game_mode & GM_NETWORK) && !Control_center_destroyed)
 	{
 		
+		multi_message_index = 0;
+		multi_sending_message[Player_num] = 0;
+		multi_send_msgsend_state(0);
+		return;
+	}
+	
+	else if (!d_strnicmp (Network_message,"/report",7) && (Game_mode & GM_NETWORK) && !Control_center_destroyed)
+	{
+		create_report();
 		multi_message_index = 0;
 		multi_sending_message[Player_num] = 0;
 		multi_send_msgsend_state(0);

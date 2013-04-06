@@ -21,10 +21,13 @@ void do_add_caller(char * buf);
 void send_remove_caller(char pnum);
 void do_remove_caller(char * buf);
 
-void account_login();
+int account_login();
+int account_logout();
 int account_login_name(int allow_abort);
 int account_login_password(int allow_abort);
+int account_login_access_token(int allow_abort);
 int account_fetch_details();
+int account_login_logout();
 
 ubyte timeout_called;
 ubyte pause_menu_page;

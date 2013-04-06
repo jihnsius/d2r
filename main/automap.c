@@ -408,26 +408,19 @@ void draw_player( object * obj )
 	automap_draw_line(&sphere_point, &arrow_point);
 }
 
-void draw_red_flag(object * obj)		// jinx 01-04-13 ctfc: draws red flag on automap
+void draw_flag(object * obj)		// jinx 01-04-13 ctfc: draws flag on automap
 {
-	if (obj->flags & OF_SHOULD_BE_DEAD) return;
+	if (obj->flags & OF_SHOULD_BE_DEAD) return;	// weird bug; should actually be fixed eventually
 	g3s_point sphere_point;
-	gr_setcolor(BM_XRGB(27, 0, 0));
-	
-	// Draw Console player -- shaped like a ellipse with an arrow.
+	if (obj->id == POW_FLAG_RED)
+		gr_setcolor(BM_XRGB(27, 0, 0));
+	else if (obj->id == POW_FLAG_BLUE)
+		gr_setcolor(BM_XRGB(15, 15, 23));
+		
 	g3_rotate_point(&sphere_point,&obj->pos);
-	g3_draw_sphere(&sphere_point,500000);
+	g3_draw_sphere(&sphere_point,500000);	// arbitrary amount, looks good in automap
 }
-void draw_blue_flag(object * obj)		// jinx 01-04-13 ctfc: draws blue flag on automap
-{
-	if (obj->flags & OF_SHOULD_BE_DEAD) return;
-	g3s_point sphere_point;
-	gr_setcolor(BM_XRGB(15, 15, 23));
-	
-	// Draw Console player -- shaped like a ellipse with an arrow.
-	g3_rotate_point(&sphere_point,&obj->pos);
-	g3_draw_sphere(&sphere_point,500000);
-}
+
 
 //name for each group.  maybe move somewhere else
 static const char *const system_name[] = {
@@ -559,7 +552,7 @@ void draw_automap(automap *am)
 				for (int i = 0;i<=N_players;i++)
 					if ((get_team(i)==TEAM_BLUE) && (Players[i].flags & PLAYER_FLAGS_FLAG)) break;
 				if (Objects[r].id == POW_FLAG_RED)
-					draw_red_flag(&Objects[r]);
+					draw_flag(&Objects[r]);
 			}
 		}
 		if (get_team(Player_num)==TEAM_BLUE)
@@ -569,7 +562,7 @@ void draw_automap(automap *am)
 				for (int i = 0;i<=N_players;i++)
 					if ((get_team(i)==TEAM_RED) && (Players[i].flags & PLAYER_FLAGS_FLAG)) break;
 				if (Objects[b].id == POW_FLAG_BLUE)
-					draw_blue_flag(&Objects[b]);
+					draw_flag(&Objects[b]);
 			}
 		}
 	}
@@ -1488,7 +1481,7 @@ void InitMarkerInput ()
 	int maxdrop,i;
 
 	//find free marker slot
-	if (!(ctfc) || !(Game_mode & GM_CAPTURE))
+	if (!ctfc || !(Game_mode & GM_CAPTURE))
 	{
 		if (Game_mode & GM_MULTI)
 		maxdrop=MAX_DROP_MULTI;

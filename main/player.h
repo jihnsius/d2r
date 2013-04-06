@@ -77,7 +77,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #define TEAM_RED    1
 
 
-
+ 
 // When this structure changes, increment the constant
 // SAVE_FILE_VERSION in playsave.c
 typedef struct player {
@@ -90,14 +90,18 @@ typedef struct player {
 	int     n_packets_sent;         // How many packets we sent to them
 
 	//  -- make sure you're 4 byte aligned now!
-	
+	 
 	// Game data
 	ubyte ready;
 	ubyte caller;
 	char account_name[ACCOUNT_NAME_LEN+1];
 	char account_password[ACCOUNT_PASSWORD_LEN+1];
+	char HashedAccessToken[65];
 	ubyte squad;
 	ubyte ace_rating;
+	char account_id[36];
+	int placement;
+	int team_placement;
 	
 	uint	spec_flags;
 	
